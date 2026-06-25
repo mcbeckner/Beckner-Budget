@@ -220,6 +220,15 @@
         const desc = document.getElementById('card-desc').value;
         const amt = parseFloat(document.getElementById('card-amt').value) || 0;
         if(amt === 0) return;
+
+        // Balance reduction logic
+        document.querySelectorAll('.debt-name').forEach(input => {
+            if(input.value.toLowerCase().trim() === desc.toLowerCase().trim()) {
+                const balInput = input.closest('tr').cells[1].querySelector('input');
+                balInput.value = (parseFloat(balInput.value) - amt).toFixed(2);
+            }
+        });
+
         addRow('card-table', [card, desc, amt.toFixed(2)]);
         document.getElementById('card-desc').value = ''; document.getElementById('card-amt').value = '';
         calculate();
@@ -234,14 +243,14 @@
         document.getElementById('over-under-display').innerText = (aInc - pInc).toFixed(2);
 
         let lBal = 0; document.querySelectorAll('#loan-table tbody tr').forEach(tr => lBal += parseFloat(tr.cells[1].querySelector('input').value) || 0);
-        document.getElementById('total-loan-bal').innerText = lBal.toLocaleString();
+        document.getElementById('total-loan-bal').innerText = lBal.toLocaleString(undefined, {minimumFractionDigits:2});
 
         let ccBal = 0; document.querySelectorAll('#cc-table tbody tr').forEach(tr => {
             const b = parseFloat(tr.cells[1].querySelector('input').value) || 0;
             const l = parseFloat(tr.cells[2].querySelector('input').value) || 1;
             ccBal += b; tr.cells[3].innerText = ((b/l)*100).toFixed(0) + '%';
         });
-        document.getElementById('total-cc-bal').innerText = ccBal.toLocaleString();
+        document.getElementById('total-cc-bal').innerText = ccBal.toLocaleString(undefined, {minimumFractionDigits:2});
 
         let tBill = 0, pBill = 0; document.querySelectorAll('#bills-table tbody tr').forEach(tr => {
             const cost = parseFloat(tr.cells[1].querySelector('input').value) || 0;
@@ -268,9 +277,14 @@
         document.querySelectorAll('.cc-name').forEach(i => options.push(i.value));
         sel.innerHTML = [...new Set(options)].map(c => `<option value="${c}">${c}</option>`).join('');
         if(options.includes(currentVal)) sel.value = currentVal;
+
+        // Restore Categories Datalist
+        const dl = document.getElementById('category-options');
+        let catOpts = ["Groceries", "Gas", "Starbucks", "Dining"];
+        document.querySelectorAll('.bill-name, .debt-name').forEach(el => catOpts.push(el.value));
+        dl.innerHTML = [...new Set(catOpts)].map(o => `<option value="${o}">`).join('');
     }
 
-    // ARCHIVE LOGIC
     function saveCurrentMonthToStorage() {
         const data = {
             projIncome: Array.from(document.querySelectorAll('#proj-income-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value]),
@@ -306,20 +320,16 @@
     function startNewMonth() {
         const newMonthName = prompt("Enter Name for New Budget (e.g. July 2026):");
         if(!newMonthName || budgetData[newMonthName]) return alert("Month already exists or invalid name.");
-        
         saveCurrentMonthToStorage();
         const prev = budgetData[currentMonth];
-        
-        // Carry over structural data, reset tracking data
         budgetData[newMonthName] = {
             projIncome: JSON.parse(JSON.stringify(prev.projIncome)),
-            actIncome: [], // Reset actuals
+            actIncome: [], 
             loans: JSON.parse(JSON.stringify(prev.loans)),
             cc: JSON.parse(JSON.stringify(prev.cc)),
-            bills: prev.bills.map(b => [b[0], b[1], b[2], 'unpaid']), // Reset paid status
-            extra: [] // Reset tracker
+            bills: prev.bills.map(b => [b[0], b[1], b[2], 'unpaid']), 
+            extra: []
         };
-        
         updateMonthDropdown();
         document.getElementById('month-selector').value = newMonthName;
         loadMonth(newMonthName);
@@ -330,7 +340,6 @@
         sel.innerHTML = Object.keys(budgetData).map(m => `<option value="${m}">${m}</option>`).join('');
     }
 
-    // INITIALIZATION
     const saved = localStorage.getItem('myBudgetData');
     if(saved) {
         budgetData = JSON.parse(saved);
