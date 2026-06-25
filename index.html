@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Budget Dashboard</title>
+    <style>
+        :root {
+            --primary-bg: #1a5276;
+            --income-blue: #d4e6f1;
+            --debt-pink: #f5eef8;
+            --bills-green: #e9f7ef;
+            --paid-green: #27ae60;
+            --unpaid-red: #e74c3c;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--primary-bg);
+            margin: 0; padding: 20px; font-size: 12px;
+        }
+
+        .header-controls {
+            display: flex; justify-content: space-between; align-items: center;
+            max-width: 1800px; margin: 0 auto 20px auto; color: white;
+        }
+
+        .dashboard-container {
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(430px, 1fr));
+            gap: 15px; max-width: 1800px; margin: 0 auto;
+            align-items: start;
+        }
+
+        .section-card { 
+            background: white; 
+            padding: 15px; 
+            border-radius: 4px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            height: fit-content;
+        }
+
+        h2 { margin-top: 0; display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; border-bottom: 2px solid #333; padding-bottom: 5px; }
+        h3 { margin: 10px 0 5px 0; font-size: 0.9rem; color: #1a5276; border-bottom: 1px solid #ccc; }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; table-layout: auto; }
+        th { background: #f2f2f2; padding: 6px; text-align: left; border: 1px solid #ccc; }
+        td { padding: 3px 6px; border: 1px solid #ccc; }
+
+        input, select.inline-edit { width: 100%; border: 1px solid transparent; padding: 4px; box-sizing: border-box; background: transparent; font-size: 12px; }
+        .edit-active input { border: 1px solid #ddd; background: #fff; }
+
+        .btn-status { cursor: pointer; padding: 4px; border: none; border-radius: 3px; color: white; font-weight: bold; width: 100%; text-align: center; }
+        .unpaid { background-color: var(--unpaid-red); }
+        .paid { background-color: var(--paid-green); }
+
+        .btn-add { background: #2980b9; color: white; border: none; padding: 2px 6px; cursor: pointer; border-radius: 3px; font-size: 10px; }
+        .btn-del { background: #c0392b; color: white; border: none; cursor: pointer; border-radius: 3px; padding: 2px 6px; display: none; }
+        .edit-active .btn-del { display: inline-block; }
+
+        .income-bg { background-color: var(--income-blue); }
+        .debt-bg { background-color: var(--debt-pink); }
+        .bills-bg { background-color: var(--bills-green); }
+        
+        .totals-row { font-weight: bold; background: rgba(0,0,0,0.05); }
+        .summary-box {
+            grid-column: 1 / -1; background: #2c3e50; color: white; padding: 15px;
+            display: flex; justify-content: space-around; border-radius: 4px; font-size: 1.2rem; margin-top: 20px;
+        }
+        
+        #month-selector { padding: 5px; font-size: 1.2rem; font-weight: bold; border-radius: 4px; }
+    </style>
+</head>
+<body class="edit-inactive">
+
+<div class="header-controls">
+    <div>
+        <select id="month-selector" onchange="switchMonth()"></select>
+        <button class="btn-add" style="background: #8e44ad; padding: 5px 10px; font-size: 12px; margin-left:10px" onclick="startNewMonth()">+ Start New Month</button>
+    </div>
+    <div>
+        <button id="edit-toggle" class="btn-add" style="background: #f39c12; padding: 5px 10px; font-size: 12px;" onclick="toggleEditMode()">Edit Mode: OFF</button>
+        <button class="btn-add" style="background: #27ae60; padding: 5px 10px; font-size: 12px;" onclick="saveCurrentMonthToStorage()">Save Progress</button>
+    </div>
+</div>
+
+<div class="dashboard-container">
+    <div class="section-card income-bg">
+        <h2>Income Planning</h2>
+        <h3>Projected Income <button class="btn-add" onclick="addRow('proj-income-table')">+</button></h3>
+        <table id="proj-income-table">
+            <thead><tr><th>Source</th><th>Projected Amt</th><th></th></tr></thead>
+            <tbody></tbody>
+            <tfoot><tr class="totals-row"><td>Total Projected</td><td id="total-proj-inc" colspan="2">0.00</td></tr></tfoot>
+        </table>
+
+        <h3>Actual Income Received <button class="btn-add" onclick="addRow('act-income-table')">+</button></h3>
+        <table id="act-income-table">
+            <thead><tr><th>Date</th><th>Source</th><th>Actual Amt</th><th></th></tr></thead>
+            <tbody></tbody>
+            <tfoot>
+                <tr class="totals-row"><td colspan="2">Total Actual Income</td><td id="total-act-inc">0.00</td><td></td></tr>
+                <tr class="totals-row"><td colspan="2">OVER/UNDER</td><td id="over-under-display">0.00</td><td></td></tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="section-card debt-bg">
+        <h2>Debt</h2>
+        <h3>Loans <button class="btn-add" onclick="addRow('loan-table')">+</button></h3>
+        <table id="loan-table">
+            <thead><tr><th>Lender</th><th>Balance</th><th>Original</th><th></th></tr></thead>
+            <tbody></tbody>
+            <tfoot><tr class="totals-row"><td>Remaining Loans</td><td id="total-loan-bal" colspan="2">0.00</td><td></td></tr></tfoot>
+        </table>
+
+        <h3>Credit Cards <button class="btn-add" onclick="addRow('cc-table')">+</button></h3>
+        <table id="cc-table">
+            <thead><tr><th>Card Name</th><th>Balance</th><th>Limit</th><th>%</th><th></th></tr></thead>
+            <tbody></tbody>
+            <tfoot>
+                <tr class="totals-row"><td>Total CC Bal</td><td id="total-cc-bal" colspan="3">0.00</td><td></td></tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="section-card bills-bg">
+        <h2>Bills <button class="btn-add" onclick="addRow('bills-table')">+</button></h2>
+        <table id="bills-table">
+            <thead><tr><th>Bill Name</th><th>Cost</th><th>Due</th><th>Status</th><th></th></tr></thead>
+            <tbody></tbody>
+            <tfoot>
+                <tr class="totals-row"><td>Total Bills</td><td id="total-bills-cost">0.00</td><td colspan="3" style="text-align:right">Paid: $<span id="total-paid-bills">0.00</span></td></tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="section-card">
+        <h2>Extra Purchase Tracker</h2>
+        <div style="margin-bottom:10px;">
+            <select id="card-sel"></select>
+            <input type="text" id="card-desc" list="category-options" placeholder="Category" style="width:100px; border:1px solid #ccc">
+            <datalist id="category-options"></datalist>
+            <input type="number" id="card-amt" placeholder="$" style="width:60px; border:1px solid #ccc">
+            <button class="btn-add" style="padding: 4px 10px;" onclick="addCardSpend()">Add</button>
+        </div>
+        <table id="card-table">
+            <thead><tr><th>Card</th><th>Category</th><th>Amt</th><th></th></tr></thead>
+            <tbody></tbody>
+            <tfoot><tr class="totals-row"><td>Total Extra</td><td colspan="2" id="total-card-spent" style="text-align:right">0.00</td><td></td></tr></tfoot>
+        </table>
+    </div>
+</div>
+
+<div class="summary-box">
+    <div>Actual Income: <span id="sum-inc">$0.00</span></div>
+    <div>Total Paid Out: <span id="sum-out">$0.00</span></div>
+    <div>Net Profit: <span id="sum-net">$0.00</span></div>
+</div>
+
+<script>
+    let isEditMode = false;
+    let currentMonth = "June 2026";
+    let budgetData = {};
+
+    function toggleEditMode() {
+        isEditMode = !isEditMode;
+        document.body.className = isEditMode ? 'edit-active' : 'edit-inactive';
+        document.getElementById('edit-toggle').innerText = isEditMode ? "Edit Mode: ON" : "Edit Mode: OFF";
+    }
+
+    function getOrdinal(n) {
+        let s = ["th", "st", "nd", "rd"], v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+
+    function sortBills() {
+        const tbody = document.querySelector('#bills-table tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        rows.sort((a, b) => {
+            let valA = a.cells[2].querySelector('input').value;
+            let valB = b.cells[2].querySelector('input').value;
+            if (!isNaN(valA) && valA !== "") { valA = getOrdinal(parseInt(valA)); a.cells[2].querySelector('input').value = valA; }
+            if (!isNaN(valB) && valB !== "") { valB = getOrdinal(parseInt(valB)); b.cells[2].querySelector('input').value = valB; }
+            return (parseInt(valA.replace(/\D/g, '')) || 0) - (parseInt(valB.replace(/\D/g, '')) || 0);
+        });
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    function addRow(tableId, data = null) {
+        const tbody = document.getElementById(tableId).querySelector('tbody');
+        const row = tbody.insertRow();
+        if(tableId === 'proj-income-table') {
+            row.innerHTML = `<td><input value="${data?.[0] || 'New Source'}"></td><td><input type="number" value="${data?.[1] || 0}" onchange="calculate()"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
+        } else if(tableId === 'act-income-table') {
+            row.innerHTML = `<td><input type="date" value="${data?.[0] || ''}"></td><td><input value="${data?.[1] || 'Source'}"></td><td><input type="number" value="${data?.[2] || 0}" onchange="calculate()"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
+        } else if(tableId === 'loan-table') {
+            row.innerHTML = `<td><input value="${data?.[0] || 'Loan'}" class="debt-name"></td><td><input type="number" value="${data?.[1] || 0}" onchange="calculate()"></td><td><input type="number" value="${data?.[2] || 0}" onchange="calculate()"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
+        } else if(tableId === 'cc-table') {
+            row.innerHTML = `<td><input value="${data?.[0] || 'CC'}" class="cc-name debt-name"></td><td><input type="number" value="${data?.[1] || 0}" onchange="calculate()"></td><td><input type="number" value="${data?.[2] || 0}" onchange="calculate()"></td><td class="debt-pct">0%</td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
+        } else if(tableId === 'bills-table') {
+            const status = data?.[3] || 'unpaid';
+            row.innerHTML = `<td><input value="${data?.[0] || 'Bill'}" class="bill-name"></td><td><input type="number" value="${data?.[1] || 0}" onchange="calculate()"></td><td><input value="${data?.[2] || '1st'}" onchange="sortBills(); calculate()"></td><td><button class="btn-status ${status}" onclick="togglePaid(this)">${status.charAt(0).toUpperCase() + status.slice(1)}</button></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
+        } else if(tableId === 'card-table') {
+            row.innerHTML = `<td>${data[0]}</td><td>${data[1]}</td><td class="c-amt">${data[2]}</td><td><button class="btn-del" style="display:inline-block" onclick="delRow(this)">X</button></td>`;
+        }
+        calculate();
+    }
+
+    function delRow(btn) { btn.closest('tr').remove(); calculate(); }
+
+    function togglePaid(btn) {
+        btn.classList.toggle('unpaid'); btn.classList.toggle('paid');
+        btn.innerText = btn.classList.contains('paid') ? 'Paid' : 'Unpaid';
+        calculate();
+    }
+
+    function addCardSpend() {
+        const card = document.getElementById('card-sel').value;
+        const desc = document.getElementById('card-desc').value;
+        const amt = parseFloat(document.getElementById('card-amt').value) || 0;
+        if(amt === 0) return;
+        addRow('card-table', [card, desc, amt.toFixed(2)]);
+        document.getElementById('card-desc').value = ''; document.getElementById('card-amt').value = '';
+        calculate();
+    }
+
+    function calculate() {
+        let pInc = 0; document.querySelectorAll('#proj-income-table tbody tr').forEach(tr => pInc += parseFloat(tr.cells[1].querySelector('input').value) || 0);
+        document.getElementById('total-proj-inc').innerText = pInc.toFixed(2);
+
+        let aInc = 0; document.querySelectorAll('#act-income-table tbody tr').forEach(tr => aInc += parseFloat(tr.cells[2].querySelector('input').value) || 0);
+        document.getElementById('total-act-inc').innerText = aInc.toFixed(2);
+        document.getElementById('over-under-display').innerText = (aInc - pInc).toFixed(2);
+
+        let lBal = 0; document.querySelectorAll('#loan-table tbody tr').forEach(tr => lBal += parseFloat(tr.cells[1].querySelector('input').value) || 0);
+        document.getElementById('total-loan-bal').innerText = lBal.toLocaleString();
+
+        let ccBal = 0; document.querySelectorAll('#cc-table tbody tr').forEach(tr => {
+            const b = parseFloat(tr.cells[1].querySelector('input').value) || 0;
+            const l = parseFloat(tr.cells[2].querySelector('input').value) || 1;
+            ccBal += b; tr.cells[3].innerText = ((b/l)*100).toFixed(0) + '%';
+        });
+        document.getElementById('total-cc-bal').innerText = ccBal.toLocaleString();
+
+        let tBill = 0, pBill = 0; document.querySelectorAll('#bills-table tbody tr').forEach(tr => {
+            const cost = parseFloat(tr.cells[1].querySelector('input').value) || 0;
+            tBill += cost; if(tr.cells[3].querySelector('button').classList.contains('paid')) pBill += cost;
+        });
+        document.getElementById('total-bills-cost').innerText = tBill.toFixed(2);
+        document.getElementById('total-paid-bills').innerText = pBill.toFixed(2);
+
+        let eTotal = 0; document.querySelectorAll('.c-amt').forEach(td => eTotal += parseFloat(td.innerText) || 0);
+        document.getElementById('total-card-spent').innerText = eTotal.toFixed(2);
+
+        const totalOut = pBill + eTotal;
+        document.getElementById('sum-inc').innerText = '$' + aInc.toFixed(2);
+        document.getElementById('sum-out').innerText = '$' + totalOut.toFixed(2);
+        document.getElementById('sum-net').innerText = '$' + (aInc - totalOut).toFixed(2);
+
+        updateSelectors();
+    }
+
+    function updateSelectors() {
+        const sel = document.getElementById('card-sel');
+        const currentVal = sel.value;
+        const options = ["Citi", "Checking Mitch", "Checking Dee"];
+        document.querySelectorAll('.cc-name').forEach(i => options.push(i.value));
+        sel.innerHTML = [...new Set(options)].map(c => `<option value="${c}">${c}</option>`).join('');
+        if(options.includes(currentVal)) sel.value = currentVal;
+    }
+
+    // ARCHIVE LOGIC
+    function saveCurrentMonthToStorage() {
+        const data = {
+            projIncome: Array.from(document.querySelectorAll('#proj-income-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value]),
+            actIncome: Array.from(document.querySelectorAll('#act-income-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value, tr.cells[2].querySelector('input').value]),
+            loans: Array.from(document.querySelectorAll('#loan-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value, tr.cells[2].querySelector('input').value]),
+            cc: Array.from(document.querySelectorAll('#cc-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value, tr.cells[2].querySelector('input').value]),
+            bills: Array.from(document.querySelectorAll('#bills-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value, tr.cells[2].querySelector('input').value, tr.cells[3].querySelector('button').classList.contains('paid') ? 'paid' : 'unpaid']),
+            extra: Array.from(document.querySelectorAll('#card-table tbody tr')).map(tr => [tr.cells[0].innerText, tr.cells[1].innerText, tr.cells[2].innerText])
+        };
+        budgetData[currentMonth] = data;
+        localStorage.setItem('myBudgetData', JSON.stringify(budgetData));
+    }
+
+    function loadMonth(monthName) {
+        currentMonth = monthName;
+        const data = budgetData[monthName];
+        document.querySelectorAll('table tbody').forEach(tb => tb.innerHTML = '');
+        data.projIncome.forEach(d => addRow('proj-income-table', d));
+        data.actIncome.forEach(d => addRow('act-income-table', d));
+        data.loans.forEach(d => addRow('loan-table', d));
+        data.cc.forEach(d => addRow('cc-table', d));
+        data.bills.forEach(d => addRow('bills-table', d));
+        data.extra.forEach(d => addRow('card-table', d));
+        sortBills();
+        calculate();
+    }
+
+    function switchMonth() {
+        saveCurrentMonthToStorage();
+        loadMonth(document.getElementById('month-selector').value);
+    }
+
+    function startNewMonth() {
+        const newMonthName = prompt("Enter Name for New Budget (e.g. July 2026):");
+        if(!newMonthName || budgetData[newMonthName]) return alert("Month already exists or invalid name.");
+        
+        saveCurrentMonthToStorage();
+        const prev = budgetData[currentMonth];
+        
+        // Carry over structural data, reset tracking data
+        budgetData[newMonthName] = {
+            projIncome: JSON.parse(JSON.stringify(prev.projIncome)),
+            actIncome: [], // Reset actuals
+            loans: JSON.parse(JSON.stringify(prev.loans)),
+            cc: JSON.parse(JSON.stringify(prev.cc)),
+            bills: prev.bills.map(b => [b[0], b[1], b[2], 'unpaid']), // Reset paid status
+            extra: [] // Reset tracker
+        };
+        
+        updateMonthDropdown();
+        document.getElementById('month-selector').value = newMonthName;
+        loadMonth(newMonthName);
+    }
+
+    function updateMonthDropdown() {
+        const sel = document.getElementById('month-selector');
+        sel.innerHTML = Object.keys(budgetData).map(m => `<option value="${m}">${m}</option>`).join('');
+    }
+
+    // INITIALIZATION
+    const saved = localStorage.getItem('myBudgetData');
+    if(saved) {
+        budgetData = JSON.parse(saved);
+        currentMonth = Object.keys(budgetData)[0];
+    } else {
+        budgetData["June 2026"] = { projIncome: [['Raytheon', 2600], ['AF', 7700], ['WSFP', 3356], ['GI Bill', 895]], actIncome: [], loans: [['Upstart', 1996, 9500]], cc: [['Ikea', 538, 3600]], bills: [['Mortgage', 3200, '1st', 'unpaid']], extra: [] };
+    }
+    updateMonthDropdown();
+    loadMonth(currentMonth);
+</script>
+</body>
+</html>
