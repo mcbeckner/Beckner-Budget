@@ -164,8 +164,8 @@
 
 <!-- FIREBASE INTEGRATION -->
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBopbvieG6FUJvMbmCzLVs05NtniD9Rv00",
@@ -181,6 +181,7 @@
 
     window.saveToFirebase = async function() {
         const saveBtn = document.getElementById('save-btn');
+        const originalText = saveBtn.innerText;
         saveBtn.innerText = "Saving...";
         
         // Capture data from UI
@@ -197,11 +198,12 @@
 
         try {
             await setDoc(doc(db, "budgets", "masterData"), { allMonths: window.budgetData });
-            saveBtn.innerText = "Save Progress";
+            saveBtn.innerText = originalText;
             alert("Cloud Save Successful!");
         } catch (e) {
-            console.error("Error saving: ", e);
-            alert("Error saving to cloud.");
+            console.error("FULL ERROR DETAIL:", e); // Check F12 Console for this!
+            saveBtn.innerText = originalText;
+            alert("Error saving: " + e.message);
         }
     }
 
@@ -210,22 +212,21 @@
             const docSnap = await getDoc(doc(db, "budgets", "masterData"));
             if (docSnap.exists()) {
                 window.budgetData = docSnap.data().allMonths;
-                window.currentMonth = Object.keys(window.budgetData)[0];
+                const months = Object.keys(window.budgetData);
+                window.currentMonth = months[months.length - 1]; // Load most recent
                 updateMonthDropdown();
+                document.getElementById('month-selector').value = window.currentMonth;
                 loadMonth(window.currentMonth);
             } else {
-                // Initialize default if DB is empty
-                console.log("No cloud data found. Initializing June.");
                 window.budgetData["June 2026"] = { projIncome: [['Raytheon', 2600]], actIncome: [], loans: [], cc: [], bills: [], extra: [] };
                 updateMonthDropdown();
                 loadMonth("June 2026");
             }
         } catch (e) {
-            console.error("Error loading: ", e);
+            console.error("Load error: ", e);
         }
     }
 
-    // Trigger load on start
     window.loadFromFirebase();
 </script>
 
