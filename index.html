@@ -47,7 +47,7 @@
         th { background: #f2f2f2; padding: 6px; text-align: left; border: 1px solid #ccc; }
         td { padding: 3px 6px; border: 1px solid #ccc; }
 
-        input, select.inline-edit { width: 100%; border: 1px solid transparent; padding: 4px; box-sizing: border-box; background: transparent; font-size: 12px; }
+        input { width: 100%; border: 1px solid transparent; padding: 4px; box-sizing: border-box; background: transparent; font-size: 12px; }
         .edit-active input { border: 1px solid #ddd; background: #fff; }
 
         .btn-status { cursor: pointer; padding: 4px; border: none; border-radius: 3px; color: white; font-weight: bold; width: 100%; text-align: center; }
@@ -85,7 +85,6 @@
 </div>
 
 <div class="dashboard-container">
-    <!-- INCOME SECTION -->
     <div class="section-card income-bg">
         <h2>Income Planning</h2>
         <h3>Projected Income <button class="btn-add" onclick="addRow('proj-income-table')">+</button></h3>
@@ -106,7 +105,6 @@
         </table>
     </div>
 
-    <!-- DEBT SECTION -->
     <div class="section-card debt-bg">
         <h2>Debt</h2>
         <h3>Loans <button class="btn-add" onclick="addRow('loan-table')">+</button></h3>
@@ -126,7 +124,6 @@
         </table>
     </div>
 
-    <!-- BILLS SECTION -->
     <div class="section-card bills-bg">
         <h2>Bills <button class="btn-add" onclick="addRow('bills-table')">+</button></h2>
         <table id="bills-table">
@@ -138,7 +135,6 @@
         </table>
     </div>
 
-    <!-- EXTRA PURCHASE TRACKER -->
     <div class="section-card">
         <h2>Extra Purchase Tracker</h2>
         <div style="margin-bottom:10px;">
@@ -162,7 +158,7 @@
     <div>Net Profit: <span id="sum-net">$0.00</span></div>
 </div>
 
-<!-- FIREBASE INTEGRATION -->
+<!-- FIREBASE SDK -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -181,29 +177,52 @@
 
     window.saveToFirebase = async function() {
         const saveBtn = document.getElementById('save-btn');
-        const originalText = saveBtn.innerText;
         saveBtn.innerText = "Saving...";
         
-        // Capture data from UI
+        // Extract data as Objects to avoid Nested Array Error
         const data = {
-            projIncome: Array.from(document.querySelectorAll('#proj-income-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value]),
-            actIncome: Array.from(document.querySelectorAll('#act-income-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value, tr.cells[2].querySelector('input').value]),
-            loans: Array.from(document.querySelectorAll('#loan-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value, tr.cells[2].querySelector('input').value]),
-            cc: Array.from(document.querySelectorAll('#cc-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value, tr.cells[2].querySelector('input').value]),
-            bills: Array.from(document.querySelectorAll('#bills-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value, tr.cells[2].querySelector('input').value, tr.cells[3].querySelector('button').classList.contains('paid') ? 'paid' : 'unpaid']),
-            extra: Array.from(document.querySelectorAll('#card-table tbody tr')).map(tr => [tr.cells[0].innerText, tr.cells[1].innerText, tr.cells[2].innerText])
+            projIncome: Array.from(document.querySelectorAll('#proj-income-table tbody tr')).map(tr => ({
+                source: tr.cells[0].querySelector('input').value,
+                amount: tr.cells[1].querySelector('input').value
+            })),
+            actIncome: Array.from(document.querySelectorAll('#act-income-table tbody tr')).map(tr => ({
+                date: tr.cells[0].querySelector('input').value,
+                source: tr.cells[1].querySelector('input').value,
+                amount: tr.cells[2].querySelector('input').value
+            })),
+            loans: Array.from(document.querySelectorAll('#loan-table tbody tr')).map(tr => ({
+                lender: tr.cells[0].querySelector('input').value,
+                balance: tr.cells[1].querySelector('input').value,
+                original: tr.cells[2].querySelector('input').value
+            })),
+            cc: Array.from(document.querySelectorAll('#cc-table tbody tr')).map(tr => ({
+                name: tr.cells[0].querySelector('input').value,
+                balance: tr.cells[1].querySelector('input').value,
+                limit: tr.cells[2].querySelector('input').value
+            })),
+            bills: Array.from(document.querySelectorAll('#bills-table tbody tr')).map(tr => ({
+                name: tr.cells[0].querySelector('input').value,
+                cost: tr.cells[1].querySelector('input').value,
+                due: tr.cells[2].querySelector('input').value,
+                status: tr.cells[3].querySelector('button').classList.contains('paid') ? 'paid' : 'unpaid'
+            })),
+            extra: Array.from(document.querySelectorAll('#card-table tbody tr')).map(tr => ({
+                card: tr.cells[0].innerText,
+                category: tr.cells[1].innerText,
+                amt: tr.cells[2].innerText
+            }))
         };
         
         window.budgetData[window.currentMonth] = data;
 
         try {
             await setDoc(doc(db, "budgets", "masterData"), { allMonths: window.budgetData });
-            saveBtn.innerText = originalText;
+            saveBtn.innerText = "Save Progress";
             alert("Cloud Save Successful!");
         } catch (e) {
-            console.error("FULL ERROR DETAIL:", e); // Check F12 Console for this!
-            saveBtn.innerText = originalText;
+            console.error(e);
             alert("Error saving: " + e.message);
+            saveBtn.innerText = "Save Progress";
         }
     }
 
@@ -213,12 +232,12 @@
             if (docSnap.exists()) {
                 window.budgetData = docSnap.data().allMonths;
                 const months = Object.keys(window.budgetData);
-                window.currentMonth = months[months.length - 1]; // Load most recent
+                window.currentMonth = months[months.length - 1];
                 updateMonthDropdown();
                 document.getElementById('month-selector').value = window.currentMonth;
                 loadMonth(window.currentMonth);
             } else {
-                window.budgetData["June 2026"] = { projIncome: [['Raytheon', 2600]], actIncome: [], loans: [], cc: [], bills: [], extra: [] };
+                window.budgetData["June 2026"] = { projIncome: [], actIncome: [], loans: [], cc: [], bills: [], extra: [] };
                 updateMonthDropdown();
                 loadMonth("June 2026");
             }
@@ -231,7 +250,6 @@
 </script>
 
 <script>
-    // CORE LOGIC (Shared)
     let isEditMode = false;
     window.currentMonth = "June 2026";
     window.budgetData = {};
@@ -264,18 +282,18 @@
         const tbody = document.getElementById(tableId).querySelector('tbody');
         const row = tbody.insertRow();
         if(tableId === 'proj-income-table') {
-            row.innerHTML = `<td><input value="${data?.[0] || 'New Source'}"></td><td><input type="number" value="${data?.[1] || 0}" onchange="calculate()"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
+            row.innerHTML = `<td><input value="${data?.source || 'New Source'}"></td><td><input type="number" value="${data?.amount || 0}" onchange="calculate()"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
         } else if(tableId === 'act-income-table') {
-            row.innerHTML = `<td><input type="date" value="${data?.[0] || ''}"></td><td><input value="${data?.[1] || 'Source'}"></td><td><input type="number" value="${data?.[2] || 0}" onchange="calculate()"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
+            row.innerHTML = `<td><input type="date" value="${data?.date || ''}"></td><td><input value="${data?.source || 'Source'}"></td><td><input type="number" value="${data?.amount || 0}" onchange="calculate()"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
         } else if(tableId === 'loan-table') {
-            row.innerHTML = `<td><input value="${data?.[0] || 'Loan'}" class="debt-name"></td><td><input type="number" value="${data?.[1] || 0}" onchange="calculate()"></td><td><input type="number" value="${data?.[2] || 0}" onchange="calculate()"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
+            row.innerHTML = `<td><input value="${data?.lender || 'Loan'}" class="debt-name"></td><td><input type="number" value="${data?.balance || 0}" onchange="calculate()"></td><td><input type="number" value="${data?.original || 0}" onchange="calculate()"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
         } else if(tableId === 'cc-table') {
-            row.innerHTML = `<td><input value="${data?.[0] || 'CC'}" class="cc-name debt-name"></td><td><input type="number" value="${data?.[1] || 0}" onchange="calculate()"></td><td><input type="number" value="${data?.[2] || 0}" onchange="calculate()"></td><td class="debt-pct">0%</td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
+            row.innerHTML = `<td><input value="${data?.name || 'CC'}" class="cc-name debt-name"></td><td><input type="number" value="${data?.balance || 0}" onchange="calculate()"></td><td><input type="number" value="${data?.limit || 0}" onchange="calculate()"></td><td class="debt-pct">0%</td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
         } else if(tableId === 'bills-table') {
-            const status = data?.[3] || 'unpaid';
-            row.innerHTML = `<td><input value="${data?.[0] || 'Bill'}" class="bill-name"></td><td><input type="number" value="${data?.[1] || 0}" onchange="calculate()"></td><td><input value="${data?.[2] || '1st'}" onchange="sortBills(); calculate()"></td><td><button class="btn-status ${status}" onclick="togglePaid(this)">${status.charAt(0).toUpperCase() + status.slice(1)}</button></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
+            const status = data?.status || 'unpaid';
+            row.innerHTML = `<td><input value="${data?.name || 'Bill'}" class="bill-name"></td><td><input type="number" value="${data?.cost || 0}" onchange="calculate()"></td><td><input value="${data?.due || '1st'}" onchange="sortBills(); calculate()"></td><td><button class="btn-status ${status}" onclick="togglePaid(this)">${status.charAt(0).toUpperCase() + status.slice(1)}</button></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
         } else if(tableId === 'card-table') {
-            row.innerHTML = `<td>${data[0]}</td><td>${data[1]}</td><td class="c-amt">${data[2]}</td><td><button class="btn-del" style="display:inline-block" onclick="delRow(this)">X</button></td>`;
+            row.innerHTML = `<td>${data.card}</td><td>${data.category}</td><td class="c-amt">${data.amt}</td><td><button class="btn-del" style="display:inline-block" onclick="delRow(this)">X</button></td>`;
         }
         calculate();
     }
@@ -299,7 +317,7 @@
                 balInput.value = (parseFloat(balInput.value) - amt).toFixed(2);
             }
         });
-        addRow('card-table', [card, desc, amt.toFixed(2)]);
+        addRow('card-table', {card: card, category: desc, amt: amt.toFixed(2)});
         document.getElementById('card-desc').value = ''; document.getElementById('card-amt').value = '';
         calculate();
     }
@@ -350,12 +368,12 @@
         window.currentMonth = monthName;
         const data = window.budgetData[monthName];
         document.querySelectorAll('table tbody').forEach(tb => tb.innerHTML = '');
-        data.projIncome.forEach(d => addRow('proj-income-table', d));
-        data.actIncome.forEach(d => addRow('act-income-table', d));
-        data.loans.forEach(d => addRow('loan-table', d));
-        data.cc.forEach(d => addRow('cc-table', d));
-        data.bills.forEach(d => addRow('bills-table', d));
-        data.extra.forEach(d => addRow('card-table', d));
+        if(data.projIncome) data.projIncome.forEach(d => addRow('proj-income-table', d));
+        if(data.actIncome) data.actIncome.forEach(d => addRow('act-income-table', d));
+        if(data.loans) data.loans.forEach(d => addRow('loan-table', d));
+        if(data.cc) data.cc.forEach(d => addRow('cc-table', d));
+        if(data.bills) data.bills.forEach(d => addRow('bills-table', d));
+        if(data.extra) data.extra.forEach(d => addRow('card-table', d));
         sortBills();
         calculate();
     }
@@ -369,11 +387,11 @@
         if(!newMonthName || window.budgetData[newMonthName]) return alert("Month already exists or invalid name.");
         const prev = window.budgetData[window.currentMonth];
         window.budgetData[newMonthName] = {
-            projIncome: JSON.parse(JSON.stringify(prev.projIncome)),
+            projIncome: JSON.parse(JSON.stringify(prev.projIncome || [])),
             actIncome: [], 
-            loans: JSON.parse(JSON.stringify(prev.loans)),
-            cc: JSON.parse(JSON.stringify(prev.cc)),
-            bills: prev.bills.map(b => [b[0], b[1], b[2], 'unpaid']), 
+            loans: JSON.parse(JSON.stringify(prev.loans || [])),
+            cc: JSON.parse(JSON.stringify(prev.cc || [])),
+            bills: (prev.bills || []).map(b => ({...b, status: 'unpaid'})), 
             extra: []
         };
         updateMonthDropdown();
