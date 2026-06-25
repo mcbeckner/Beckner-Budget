@@ -80,11 +80,12 @@
     </div>
     <div>
         <button id="edit-toggle" class="btn-add" style="background: #f39c12; padding: 5px 10px; font-size: 12px;" onclick="toggleEditMode()">Edit Mode: OFF</button>
-        <button class="btn-add" style="background: #27ae60; padding: 5px 10px; font-size: 12px;" onclick="saveCurrentMonthToStorage()">Save Progress</button>
+        <button class="btn-add" id="save-btn" style="background: #27ae60; padding: 5px 10px; font-size: 12px;" onclick="saveToFirebase()">Save Progress</button>
     </div>
 </div>
 
 <div class="dashboard-container">
+    <!-- INCOME SECTION -->
     <div class="section-card income-bg">
         <h2>Income Planning</h2>
         <h3>Projected Income <button class="btn-add" onclick="addRow('proj-income-table')">+</button></h3>
@@ -105,6 +106,7 @@
         </table>
     </div>
 
+    <!-- DEBT SECTION -->
     <div class="section-card debt-bg">
         <h2>Debt</h2>
         <h3>Loans <button class="btn-add" onclick="addRow('loan-table')">+</button></h3>
@@ -124,6 +126,7 @@
         </table>
     </div>
 
+    <!-- BILLS SECTION -->
     <div class="section-card bills-bg">
         <h2>Bills <button class="btn-add" onclick="addRow('bills-table')">+</button></h2>
         <table id="bills-table">
@@ -135,6 +138,7 @@
         </table>
     </div>
 
+    <!-- EXTRA PURCHASE TRACKER -->
     <div class="section-card">
         <h2>Extra Purchase Tracker</h2>
         <div style="margin-bottom:10px;">
@@ -158,10 +162,78 @@
     <div>Net Profit: <span id="sum-net">$0.00</span></div>
 </div>
 
+<!-- FIREBASE INTEGRATION -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBopbvieG6FUJvMbmCzLVs05NtniD9Rv00",
+        authDomain: "beckner-budget.firebaseapp.com",
+        projectId: "beckner-budget",
+        storageBucket: "beckner-budget.firebasestorage.app",
+        messagingSenderId: "971154430839",
+        appId: "1:971154430839:web:40e2d3d808716199525f72"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.saveToFirebase = async function() {
+        const saveBtn = document.getElementById('save-btn');
+        saveBtn.innerText = "Saving...";
+        
+        // Capture data from UI
+        const data = {
+            projIncome: Array.from(document.querySelectorAll('#proj-income-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value]),
+            actIncome: Array.from(document.querySelectorAll('#act-income-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value, tr.cells[2].querySelector('input').value]),
+            loans: Array.from(document.querySelectorAll('#loan-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value, tr.cells[2].querySelector('input').value]),
+            cc: Array.from(document.querySelectorAll('#cc-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value, tr.cells[2].querySelector('input').value]),
+            bills: Array.from(document.querySelectorAll('#bills-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value, tr.cells[2].querySelector('input').value, tr.cells[3].querySelector('button').classList.contains('paid') ? 'paid' : 'unpaid']),
+            extra: Array.from(document.querySelectorAll('#card-table tbody tr')).map(tr => [tr.cells[0].innerText, tr.cells[1].innerText, tr.cells[2].innerText])
+        };
+        
+        window.budgetData[window.currentMonth] = data;
+
+        try {
+            await setDoc(doc(db, "budgets", "masterData"), { allMonths: window.budgetData });
+            saveBtn.innerText = "Save Progress";
+            alert("Cloud Save Successful!");
+        } catch (e) {
+            console.error("Error saving: ", e);
+            alert("Error saving to cloud.");
+        }
+    }
+
+    window.loadFromFirebase = async function() {
+        try {
+            const docSnap = await getDoc(doc(db, "budgets", "masterData"));
+            if (docSnap.exists()) {
+                window.budgetData = docSnap.data().allMonths;
+                window.currentMonth = Object.keys(window.budgetData)[0];
+                updateMonthDropdown();
+                loadMonth(window.currentMonth);
+            } else {
+                // Initialize default if DB is empty
+                console.log("No cloud data found. Initializing June.");
+                window.budgetData["June 2026"] = { projIncome: [['Raytheon', 2600]], actIncome: [], loans: [], cc: [], bills: [], extra: [] };
+                updateMonthDropdown();
+                loadMonth("June 2026");
+            }
+        } catch (e) {
+            console.error("Error loading: ", e);
+        }
+    }
+
+    // Trigger load on start
+    window.loadFromFirebase();
+</script>
+
 <script>
+    // CORE LOGIC (Shared)
     let isEditMode = false;
-    let currentMonth = "June 2026";
-    let budgetData = {};
+    window.currentMonth = "June 2026";
+    window.budgetData = {};
 
     function toggleEditMode() {
         isEditMode = !isEditMode;
@@ -220,15 +292,12 @@
         const desc = document.getElementById('card-desc').value;
         const amt = parseFloat(document.getElementById('card-amt').value) || 0;
         if(amt === 0) return;
-
-        // Balance reduction logic
         document.querySelectorAll('.debt-name').forEach(input => {
             if(input.value.toLowerCase().trim() === desc.toLowerCase().trim()) {
                 const balInput = input.closest('tr').cells[1].querySelector('input');
                 balInput.value = (parseFloat(balInput.value) - amt).toFixed(2);
             }
         });
-
         addRow('card-table', [card, desc, amt.toFixed(2)]);
         document.getElementById('card-desc').value = ''; document.getElementById('card-amt').value = '';
         calculate();
@@ -237,36 +306,29 @@
     function calculate() {
         let pInc = 0; document.querySelectorAll('#proj-income-table tbody tr').forEach(tr => pInc += parseFloat(tr.cells[1].querySelector('input').value) || 0);
         document.getElementById('total-proj-inc').innerText = pInc.toFixed(2);
-
         let aInc = 0; document.querySelectorAll('#act-income-table tbody tr').forEach(tr => aInc += parseFloat(tr.cells[2].querySelector('input').value) || 0);
         document.getElementById('total-act-inc').innerText = aInc.toFixed(2);
         document.getElementById('over-under-display').innerText = (aInc - pInc).toFixed(2);
-
         let lBal = 0; document.querySelectorAll('#loan-table tbody tr').forEach(tr => lBal += parseFloat(tr.cells[1].querySelector('input').value) || 0);
         document.getElementById('total-loan-bal').innerText = lBal.toLocaleString(undefined, {minimumFractionDigits:2});
-
         let ccBal = 0; document.querySelectorAll('#cc-table tbody tr').forEach(tr => {
             const b = parseFloat(tr.cells[1].querySelector('input').value) || 0;
             const l = parseFloat(tr.cells[2].querySelector('input').value) || 1;
             ccBal += b; tr.cells[3].innerText = ((b/l)*100).toFixed(0) + '%';
         });
         document.getElementById('total-cc-bal').innerText = ccBal.toLocaleString(undefined, {minimumFractionDigits:2});
-
         let tBill = 0, pBill = 0; document.querySelectorAll('#bills-table tbody tr').forEach(tr => {
             const cost = parseFloat(tr.cells[1].querySelector('input').value) || 0;
             tBill += cost; if(tr.cells[3].querySelector('button').classList.contains('paid')) pBill += cost;
         });
         document.getElementById('total-bills-cost').innerText = tBill.toFixed(2);
         document.getElementById('total-paid-bills').innerText = pBill.toFixed(2);
-
         let eTotal = 0; document.querySelectorAll('.c-amt').forEach(td => eTotal += parseFloat(td.innerText) || 0);
         document.getElementById('total-card-spent').innerText = eTotal.toFixed(2);
-
         const totalOut = pBill + eTotal;
         document.getElementById('sum-inc').innerText = '$' + aInc.toFixed(2);
         document.getElementById('sum-out').innerText = '$' + totalOut.toFixed(2);
         document.getElementById('sum-net').innerText = '$' + (aInc - totalOut).toFixed(2);
-
         updateSelectors();
     }
 
@@ -277,30 +339,15 @@
         document.querySelectorAll('.cc-name').forEach(i => options.push(i.value));
         sel.innerHTML = [...new Set(options)].map(c => `<option value="${c}">${c}</option>`).join('');
         if(options.includes(currentVal)) sel.value = currentVal;
-
-        // Restore Categories Datalist
         const dl = document.getElementById('category-options');
         let catOpts = ["Groceries", "Gas", "Starbucks", "Dining"];
         document.querySelectorAll('.bill-name, .debt-name').forEach(el => catOpts.push(el.value));
         dl.innerHTML = [...new Set(catOpts)].map(o => `<option value="${o}">`).join('');
     }
 
-    function saveCurrentMonthToStorage() {
-        const data = {
-            projIncome: Array.from(document.querySelectorAll('#proj-income-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value]),
-            actIncome: Array.from(document.querySelectorAll('#act-income-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value, tr.cells[2].querySelector('input').value]),
-            loans: Array.from(document.querySelectorAll('#loan-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value, tr.cells[2].querySelector('input').value]),
-            cc: Array.from(document.querySelectorAll('#cc-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value, tr.cells[2].querySelector('input').value]),
-            bills: Array.from(document.querySelectorAll('#bills-table tbody tr')).map(tr => [tr.cells[0].querySelector('input').value, tr.cells[1].querySelector('input').value, tr.cells[2].querySelector('input').value, tr.cells[3].querySelector('button').classList.contains('paid') ? 'paid' : 'unpaid']),
-            extra: Array.from(document.querySelectorAll('#card-table tbody tr')).map(tr => [tr.cells[0].innerText, tr.cells[1].innerText, tr.cells[2].innerText])
-        };
-        budgetData[currentMonth] = data;
-        localStorage.setItem('myBudgetData', JSON.stringify(budgetData));
-    }
-
     function loadMonth(monthName) {
-        currentMonth = monthName;
-        const data = budgetData[monthName];
+        window.currentMonth = monthName;
+        const data = window.budgetData[monthName];
         document.querySelectorAll('table tbody').forEach(tb => tb.innerHTML = '');
         data.projIncome.forEach(d => addRow('proj-income-table', d));
         data.actIncome.forEach(d => addRow('act-income-table', d));
@@ -313,16 +360,14 @@
     }
 
     function switchMonth() {
-        saveCurrentMonthToStorage();
         loadMonth(document.getElementById('month-selector').value);
     }
 
     function startNewMonth() {
         const newMonthName = prompt("Enter Name for New Budget (e.g. July 2026):");
-        if(!newMonthName || budgetData[newMonthName]) return alert("Month already exists or invalid name.");
-        saveCurrentMonthToStorage();
-        const prev = budgetData[currentMonth];
-        budgetData[newMonthName] = {
+        if(!newMonthName || window.budgetData[newMonthName]) return alert("Month already exists or invalid name.");
+        const prev = window.budgetData[window.currentMonth];
+        window.budgetData[newMonthName] = {
             projIncome: JSON.parse(JSON.stringify(prev.projIncome)),
             actIncome: [], 
             loans: JSON.parse(JSON.stringify(prev.loans)),
@@ -337,18 +382,8 @@
 
     function updateMonthDropdown() {
         const sel = document.getElementById('month-selector');
-        sel.innerHTML = Object.keys(budgetData).map(m => `<option value="${m}">${m}</option>`).join('');
+        sel.innerHTML = Object.keys(window.budgetData).map(m => `<option value="${m}">${m}</option>`).join('');
     }
-
-    const saved = localStorage.getItem('myBudgetData');
-    if(saved) {
-        budgetData = JSON.parse(saved);
-        currentMonth = Object.keys(budgetData)[0];
-    } else {
-        budgetData["June 2026"] = { projIncome: [['Raytheon', 2600], ['AF', 7700], ['WSFP', 3356], ['GI Bill', 895]], actIncome: [], loans: [['Upstart', 1996, 9500]], cc: [['Ikea', 538, 3600]], bills: [['Mortgage', 3200, '1st', 'unpaid']], extra: [] };
-    }
-    updateMonthDropdown();
-    loadMonth(currentMonth);
 </script>
 </body>
 </html>
