@@ -5,404 +5,135 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Master Budget Dashboard</title>
     <style>
-        :root {
-            --primary-bg: #1a5276;
-            --income-blue: #d4e6f1;
-            --debt-pink: #f5eef8;
-            --bills-green: #e9f7ef;
-            --paid-green: #27ae60;
-            --unpaid-red: #e74c3c;
-        }
-
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background-color: var(--primary-bg);
-            margin: 0; padding: 20px; font-size: 12px;
-        }
-
-        .header-controls {
-            display: flex; justify-content: space-between; align-items: center;
-            max-width: 1800px; margin: 0 auto 20px auto; color: white;
-        }
-
-        .dashboard-container {
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(430px, 1fr));
-            gap: 15px; max-width: 1800px; margin: 0 auto;
-            align-items: start;
-        }
-
-        .section-card { 
-            background: white; 
-            padding: 15px; 
-            border-radius: 4px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            height: fit-content;
-        }
-
+        :root { --primary-bg: #1a5276; --income-blue: #d4e6f1; --debt-pink: #f5eef8; --bills-green: #e9f7ef; --paid-green: #27ae60; --unpaid-red: #e74c3c; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--primary-bg); margin: 0; padding: 20px; font-size: 12px; }
+        .header-controls { display: flex; justify-content: space-between; align-items: center; max-width: 1800px; margin: 0 auto 20px auto; color: white; }
+        .dashboard-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(430px, 1fr)); gap: 15px; max-width: 1800px; margin: 0 auto; align-items: start; }
+        .section-card { background: white; padding: 15px; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         h2 { margin-top: 0; display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; border-bottom: 2px solid #333; padding-bottom: 5px; }
         h3 { margin: 10px 0 5px 0; font-size: 0.9rem; color: #1a5276; border-bottom: 1px solid #ccc; }
-
-        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; table-layout: auto; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
         th { background: #f2f2f2; padding: 6px; text-align: left; border: 1px solid #ccc; }
         td { padding: 3px 6px; border: 1px solid #ccc; }
-
         input { width: 100%; border: 1px solid transparent; padding: 4px; box-sizing: border-box; background: transparent; font-size: 12px; }
         .edit-active input { border: 1px solid #ddd; background: #fff; }
-
-        .btn-status { cursor: pointer; padding: 4px; border: none; border-radius: 3px; color: white; font-weight: bold; width: 100%; text-align: center; }
+        .btn-status { cursor: pointer; padding: 4px; border: none; border-radius: 3px; color: white; font-weight: bold; width: 100%; }
         .unpaid { background-color: var(--unpaid-red); }
         .paid { background-color: var(--paid-green); }
-
-        .btn-add { background: #2980b9; color: white; border: none; padding: 2px 6px; cursor: pointer; border-radius: 3px; font-size: 10px; }
-        .btn-del { background: #c0392b; color: white; border: none; cursor: pointer; border-radius: 3px; padding: 2px 6px; display: none; }
+        .btn-add { background: #2980b9; color: white; border: none; padding: 2px 6px; cursor: pointer; border-radius: 3px; }
+        .btn-del { background: #c0392b; color: white; border: none; cursor: pointer; border-radius: 3px; display: none; }
         .edit-active .btn-del { display: inline-block; }
-
         .income-bg { background-color: var(--income-blue); }
         .debt-bg { background-color: var(--debt-pink); }
         .bills-bg { background-color: var(--bills-green); }
-        
         .totals-row { font-weight: bold; background: rgba(0,0,0,0.05); }
-        .summary-box {
-            grid-column: 1 / -1; background: #2c3e50; color: white; padding: 15px;
-            display: flex; justify-content: space-around; border-radius: 4px; font-size: 1.2rem; margin-top: 20px;
-        }
-        
-        #month-selector { padding: 5px; font-size: 1.2rem; font-weight: bold; border-radius: 4px; }
+        .summary-box { grid-column: 1 / -1; background: #2c3e50; color: white; padding: 15px; display: flex; justify-content: space-around; border-radius: 4px; font-size: 1.2rem; margin-top: 20px; }
     </style>
 </head>
 <body class="edit-inactive">
-
 <div class="header-controls">
-    <div>
-        <select id="month-selector" onchange="switchMonth()"></select>
-        <button class="btn-add" style="background: #8e44ad; padding: 5px 10px; font-size: 12px; margin-left:10px" onclick="startNewMonth()">+ Start New Month</button>
-    </div>
-    <div>
-        <button id="edit-toggle" class="btn-add" style="background: #f39c12; padding: 5px 10px; font-size: 12px;" onclick="toggleEditMode()">Edit Mode: OFF</button>
-        <button class="btn-add" id="save-btn" style="background: #27ae60; padding: 5px 10px; font-size: 12px;" onclick="saveToFirebase()">Save Progress</button>
-    </div>
+    <div><select id="month-selector" onchange="switchMonth()"></select><button class="btn-add" style="background:#8e44ad; margin-left:10px" onclick="startNewMonth()">+ Start New Month</button></div>
+    <div><button id="edit-toggle" class="btn-add" style="background:#f39c12" onclick="toggleEditMode()">Edit Mode: OFF</button><button class="btn-add" id="save-btn" style="background:#27ae60" onclick="saveToFirebase()">Save Progress</button></div>
 </div>
-
 <div class="dashboard-container">
     <div class="section-card income-bg">
         <h2>Income Planning</h2>
-        <h3>Projected Income <button class="btn-add" onclick="addRow('proj-income-table')">+</button></h3>
-        <table id="proj-income-table">
-            <thead><tr><th>Source</th><th>Projected Amt</th><th></th></tr></thead>
-            <tbody></tbody>
-            <tfoot><tr class="totals-row"><td>Total Projected</td><td id="total-proj-inc" colspan="2">0.00</td></tr></tfoot>
-        </table>
-
-        <h3>Actual Income Received <button class="btn-add" onclick="addRow('act-income-table')">+</button></h3>
-        <table id="act-income-table">
-            <thead><tr><th>Date</th><th>Source</th><th>Actual Amt</th><th></th></tr></thead>
-            <tbody></tbody>
-            <tfoot>
-                <tr class="totals-row"><td colspan="2">Total Actual Income</td><td id="total-act-inc">0.00</td><td></td></tr>
-                <tr class="totals-row"><td colspan="2">OVER/UNDER</td><td id="over-under-display">0.00</td><td></td></tr>
-            </tfoot>
-        </table>
+        <h3>Projected <button class="btn-add" onclick="addRow('proj-income-table')">+</button></h3>
+        <table id="proj-income-table"><thead><tr><th>Source</th><th>Amt</th><th></th></tr></thead><tbody></tbody><tfoot><tr class="totals-row"><td>Total Projected</td><td id="total-proj-inc" colspan="2">$0.00</td></tr></tfoot></table>
+        <h3>Actual <button class="btn-add" onclick="addRow('act-income-table')">+</button></h3>
+        <table id="act-income-table"><thead><tr><th>Date</th><th>Source</th><th>Amt</th><th></th></tr></thead><tbody></tbody><tfoot><tr class="totals-row"><td colspan="2">Total Actual</td><td id="total-act-inc"></td><td></td></tr><tr class="totals-row"><td colspan="2">OVER/UNDER</td><td id="over-under-display"></td><td></td></tr></tfoot></table>
     </div>
-
     <div class="section-card debt-bg">
         <h2>Debt</h2>
         <h3>Loans <button class="btn-add" onclick="addRow('loan-table')">+</button></h3>
-        <table id="loan-table">
-            <thead><tr><th>Lender</th><th>Balance</th><th>Original</th><th></th></tr></thead>
-            <tbody></tbody>
-            <tfoot><tr class="totals-row"><td>Remaining Loans</td><td id="total-loan-bal" colspan="2">0.00</td><td></td></tr></tfoot>
-        </table>
-
-        <h3>Credit Cards <button class="btn-add" onclick="addRow('cc-table')">+</button></h3>
-        <table id="cc-table">
-            <thead><tr><th>Card Name</th><th>Balance</th><th>Limit</th><th>%</th><th></th></tr></thead>
-            <tbody></tbody>
-            <tfoot>
-                <tr class="totals-row"><td>Total CC Bal</td><td id="total-cc-bal" colspan="3">0.00</td><td></td></tr>
-            </tfoot>
-        </table>
+        <table id="loan-table"><thead><tr><th>Lender</th><th>Balance</th><th>Original</th><th></th></tr></thead><tbody></tbody><tfoot><tr class="totals-row"><td>Remaining</td><td id="total-loan-bal" colspan="2">$0.00</td><td></td></tr></tfoot></table>
+        <h3>Cards <button class="btn-add" onclick="addRow('cc-table')">+</button></h3>
+        <table id="cc-table"><thead><tr><th>Card</th><th>Balance</th><th>Limit</th><th>%</th><th></th></tr></thead><tbody></tbody><tfoot><tr class="totals-row"><td>Total Bal</td><td id="total-cc-bal" colspan="3">$0.00</td><td></td></tr><tr class="totals-row"><td>Total Avail</td><td id="total-cc-avail" colspan="3">$0.00</td><td></td></tr></tfoot></table>
     </div>
-
     <div class="section-card bills-bg">
         <h2>Bills <button class="btn-add" onclick="addRow('bills-table')">+</button></h2>
-        <table id="bills-table">
-            <thead><tr><th>Bill Name</th><th>Cost</th><th>Due</th><th>Status</th><th></th></tr></thead>
-            <tbody></tbody>
-            <tfoot>
-                <tr class="totals-row"><td>Total Bills</td><td id="total-bills-cost">0.00</td><td colspan="3" style="text-align:right">Paid: $<span id="total-paid-bills">0.00</span></td></tr>
-            </tfoot>
-        </table>
+        <table id="bills-table"><thead><tr><th>Bill</th><th>Cost</th><th>Due</th><th>Status</th><th></th></tr></thead><tbody></tbody><tfoot><tr class="totals-row"><td>Total</td><td id="total-bills-cost">$0.00</td><td colspan="3" style="text-align:right">Paid: <span id="total-paid-bills">$0.00</span></td></tr></tfoot></table>
     </div>
-
     <div class="section-card">
-        <h2>Extra Purchase Tracker</h2>
-        <div style="margin-bottom:10px;">
-            <select id="card-sel"></select>
-            <input type="text" id="card-desc" list="category-options" placeholder="Category" style="width:100px; border:1px solid #ccc">
-            <datalist id="category-options"></datalist>
-            <input type="number" id="card-amt" placeholder="$" style="width:60px; border:1px solid #ccc">
-            <button class="btn-add" style="padding: 4px 10px;" onclick="addCardSpend()">Add</button>
-        </div>
-        <table id="card-table">
-            <thead><tr><th>Card</th><th>Category</th><th>Amt</th><th></th></tr></thead>
-            <tbody></tbody>
-            <tfoot><tr class="totals-row"><td>Total Extra</td><td colspan="2" id="total-card-spent" style="text-align:right">0.00</td><td></td></tr></tfoot>
-        </table>
+        <h2>Extras</h2>
+        <div style="margin-bottom:10px;"><select id="card-sel"></select><input type="text" id="card-desc" list="category-options" placeholder="Category" style="width:100px; border:1px solid #ccc"><datalist id="category-options"></datalist><input type="text" id="card-amt" placeholder="$" style="width:60px; border:1px solid #ccc" onchange="this.value=fmt(this.value)"><button class="btn-add" onclick="addCardSpend()">Add</button></div>
+        <table id="card-table"><thead><tr><th>Card</th><th>Cat</th><th>Amt</th><th></th></tr></thead><tbody></tbody><tfoot><tr class="totals-row"><td>Total</td><td colspan="2" id="total-card-spent" style="text-align:right">$0.00</td><td></td></tr></tfoot></table>
     </div>
 </div>
+<div class="summary-box"><div>Actual: <span id="sum-inc">$0.00</span></div><div>Paid Out: <span id="sum-out">$0.00</span></div><div>Net: <span id="sum-net">$0.00</span></div></div>
 
-<div class="summary-box">
-    <div>Actual Income: <span id="sum-inc">$0.00</span></div>
-    <div>Total Paid Out: <span id="sum-out">$0.00</span></div>
-    <div>Net Profit: <span id="sum-net">$0.00</span></div>
-</div>
-
-<!-- FIREBASE SDK -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyBopbvieG6FUJvMbmCzLVs05NtniD9Rv00",
-        authDomain: "beckner-budget.firebaseapp.com",
-        projectId: "beckner-budget",
-        storageBucket: "beckner-budget.firebasestorage.app",
-        messagingSenderId: "971154430839",
-        appId: "1:971154430839:web:40e2d3d808716199525f72"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
+    const firebaseConfig = { apiKey: "AIzaSyBopbvieG6FUJvMbmCzLVs05NtniD9Rv00", authDomain: "beckner-budget.firebaseapp.com", projectId: "beckner-budget", storageBucket: "beckner-budget.firebasestorage.app", messagingSenderId: "971154430839", appId: "1:971154430839:web:40e2d3d808716199525f72" };
+    const app = initializeApp(firebaseConfig); const db = getFirestore(app);
     window.saveToFirebase = async function() {
-        const saveBtn = document.getElementById('save-btn');
-        saveBtn.innerText = "Saving...";
-        
-        // Extract data as Objects to avoid Nested Array Error
         const data = {
-            projIncome: Array.from(document.querySelectorAll('#proj-income-table tbody tr')).map(tr => ({
-                source: tr.cells[0].querySelector('input').value,
-                amount: tr.cells[1].querySelector('input').value
-            })),
-            actIncome: Array.from(document.querySelectorAll('#act-income-table tbody tr')).map(tr => ({
-                date: tr.cells[0].querySelector('input').value,
-                source: tr.cells[1].querySelector('input').value,
-                amount: tr.cells[2].querySelector('input').value
-            })),
-            loans: Array.from(document.querySelectorAll('#loan-table tbody tr')).map(tr => ({
-                lender: tr.cells[0].querySelector('input').value,
-                balance: tr.cells[1].querySelector('input').value,
-                original: tr.cells[2].querySelector('input').value
-            })),
-            cc: Array.from(document.querySelectorAll('#cc-table tbody tr')).map(tr => ({
-                name: tr.cells[0].querySelector('input').value,
-                balance: tr.cells[1].querySelector('input').value,
-                limit: tr.cells[2].querySelector('input').value
-            })),
-            bills: Array.from(document.querySelectorAll('#bills-table tbody tr')).map(tr => ({
-                name: tr.cells[0].querySelector('input').value,
-                cost: tr.cells[1].querySelector('input').value,
-                due: tr.cells[2].querySelector('input').value,
-                status: tr.cells[3].querySelector('button').classList.contains('paid') ? 'paid' : 'unpaid'
-            })),
-            extra: Array.from(document.querySelectorAll('#card-table tbody tr')).map(tr => ({
-                card: tr.cells[0].innerText,
-                category: tr.cells[1].innerText,
-                amt: tr.cells[2].innerText
-            }))
+            projIncome: Array.from(document.querySelectorAll('#proj-income-table tbody tr')).map(tr => ({ source: tr.cells[0].querySelector('input').value, amount: clean(tr.cells[1].querySelector('input').value) })),
+            actIncome: Array.from(document.querySelectorAll('#act-income-table tbody tr')).map(tr => ({ date: tr.cells[0].querySelector('input').value, source: tr.cells[1].querySelector('input').value, amount: clean(tr.cells[2].querySelector('input').value) })),
+            loans: Array.from(document.querySelectorAll('#loan-table tbody tr')).map(tr => ({ lender: tr.cells[0].querySelector('input').value, balance: clean(tr.cells[1].querySelector('input').value), original: clean(tr.cells[2].querySelector('input').value) })),
+            cc: Array.from(document.querySelectorAll('#cc-table tbody tr')).map(tr => ({ name: tr.cells[0].querySelector('input').value, balance: clean(tr.cells[1].querySelector('input').value), limit: clean(tr.cells[2].querySelector('input').value) })),
+            bills: Array.from(document.querySelectorAll('#bills-table tbody tr')).map(tr => ({ name: tr.cells[0].querySelector('input').value, cost: clean(tr.cells[1].querySelector('input').value), due: tr.cells[2].querySelector('input').value, status: tr.cells[3].querySelector('button').classList.contains('paid') ? 'paid' : 'unpaid' })),
+            extra: Array.from(document.querySelectorAll('#card-table tbody tr')).map(tr => ({ card: tr.cells[0].innerText, category: tr.cells[1].innerText, amt: clean(tr.cells[2].innerText) }))
         };
-        
         window.budgetData[window.currentMonth] = data;
-
-        try {
-            await setDoc(doc(db, "budgets", "masterData"), { allMonths: window.budgetData });
-            saveBtn.innerText = "Save Progress";
-            alert("Cloud Save Successful!");
-        } catch (e) {
-            console.error(e);
-            alert("Error saving: " + e.message);
-            saveBtn.innerText = "Save Progress";
-        }
+        try { await setDoc(doc(db, "budgets", "masterData"), { allMonths: window.budgetData }); alert("Saved!"); } catch (e) { alert("Error: " + e.message); }
     }
-
     window.loadFromFirebase = async function() {
-        try {
-            const docSnap = await getDoc(doc(db, "budgets", "masterData"));
-            if (docSnap.exists()) {
-                window.budgetData = docSnap.data().allMonths;
-                const months = Object.keys(window.budgetData);
-                window.currentMonth = months[months.length - 1];
-                updateMonthDropdown();
-                document.getElementById('month-selector').value = window.currentMonth;
-                loadMonth(window.currentMonth);
-            } else {
-                window.budgetData["June 2026"] = { projIncome: [], actIncome: [], loans: [], cc: [], bills: [], extra: [] };
-                updateMonthDropdown();
-                loadMonth("June 2026");
-            }
-        } catch (e) {
-            console.error("Load error: ", e);
-        }
+        const docSnap = await getDoc(doc(db, "budgets", "masterData"));
+        if (docSnap.exists()) { window.budgetData = docSnap.data().allMonths; updateMonthDropdown(); loadMonth(Object.keys(window.budgetData).pop()); }
+        else { window.budgetData["June 2026"] = { projIncome: [], actIncome: [], loans: [], cc: [], bills: [], extra: [] }; updateMonthDropdown(); loadMonth("June 2026"); }
     }
-
     window.loadFromFirebase();
 </script>
 
 <script>
-    let isEditMode = false;
-    window.currentMonth = "June 2026";
-    window.budgetData = {};
-
-    function toggleEditMode() {
-        isEditMode = !isEditMode;
-        document.body.className = isEditMode ? 'edit-active' : 'edit-inactive';
-        document.getElementById('edit-toggle').innerText = isEditMode ? "Edit Mode: ON" : "Edit Mode: OFF";
-    }
-
-    function getOrdinal(n) {
-        let s = ["th", "st", "nd", "rd"], v = n % 100;
-        return n + (s[(v - 20) % 10] || s[v] || s[0]);
-    }
-
-    function sortBills() {
-        const tbody = document.querySelector('#bills-table tbody');
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-        rows.sort((a, b) => {
-            let valA = a.cells[2].querySelector('input').value;
-            let valB = b.cells[2].querySelector('input').value;
-            if (!isNaN(valA) && valA !== "") { valA = getOrdinal(parseInt(valA)); a.cells[2].querySelector('input').value = valA; }
-            if (!isNaN(valB) && valB !== "") { valB = getOrdinal(parseInt(valB)); b.cells[2].querySelector('input').value = valB; }
-            return (parseInt(valA.replace(/\D/g, '')) || 0) - (parseInt(valB.replace(/\D/g, '')) || 0);
-        });
-        rows.forEach(row => tbody.appendChild(row));
-    }
-
+    let isEditMode = false; window.budgetData = {};
+    function toggleEditMode() { isEditMode = !isEditMode; document.body.className = isEditMode ? 'edit-active' : 'edit-inactive'; document.getElementById('edit-toggle').innerText = isEditMode ? "Edit Mode: ON" : "Edit Mode: OFF"; }
+    function fmt(v) { return '$' + (parseFloat(String(v).replace(/[^0-9.-]+/g,"")) || 0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
+    function clean(v) { return parseFloat(String(v).replace(/[^0-9.-]+/g,"")) || 0; }
     function addRow(tableId, data = null) {
-        const tbody = document.getElementById(tableId).querySelector('tbody');
-        const row = tbody.insertRow();
-        if(tableId === 'proj-income-table') {
-            row.innerHTML = `<td><input value="${data?.source || 'New Source'}"></td><td><input type="number" value="${data?.amount || 0}" onchange="calculate()"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
-        } else if(tableId === 'act-income-table') {
-            row.innerHTML = `<td><input type="date" value="${data?.date || ''}"></td><td><input value="${data?.source || 'Source'}"></td><td><input type="number" value="${data?.amount || 0}" onchange="calculate()"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
-        } else if(tableId === 'loan-table') {
-            row.innerHTML = `<td><input value="${data?.lender || 'Loan'}" class="debt-name"></td><td><input type="number" value="${data?.balance || 0}" onchange="calculate()"></td><td><input type="number" value="${data?.original || 0}" onchange="calculate()"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
-        } else if(tableId === 'cc-table') {
-            row.innerHTML = `<td><input value="${data?.name || 'CC'}" class="cc-name debt-name"></td><td><input type="number" value="${data?.balance || 0}" onchange="calculate()"></td><td><input type="number" value="${data?.limit || 0}" onchange="calculate()"></td><td class="debt-pct">0%</td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
-        } else if(tableId === 'bills-table') {
-            const status = data?.status || 'unpaid';
-            row.innerHTML = `<td><input value="${data?.name || 'Bill'}" class="bill-name"></td><td><input type="number" value="${data?.cost || 0}" onchange="calculate()"></td><td><input value="${data?.due || '1st'}" onchange="sortBills(); calculate()"></td><td><button class="btn-status ${status}" onclick="togglePaid(this)">${status.charAt(0).toUpperCase() + status.slice(1)}</button></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
-        } else if(tableId === 'card-table') {
-            row.innerHTML = `<td>${data.card}</td><td>${data.category}</td><td class="c-amt">${data.amt}</td><td><button class="btn-del" style="display:inline-block" onclick="delRow(this)">X</button></td>`;
-        }
+        const tbody = document.getElementById(tableId).querySelector('tbody'); const row = tbody.insertRow();
+        if(tableId==='proj-income-table') row.innerHTML = `<td><input value="${data?.source||''}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.amount||0)}"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
+        else if(tableId==='act-income-table') row.innerHTML = `<td><input type="date" value="${data?.date||''}"></td><td><input value="${data?.source||''}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.amount||0)}"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
+        else if(tableId==='loan-table') row.innerHTML = `<td><input class="debt-name" value="${data?.lender||''}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.balance||0)}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.original||0)}"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
+        else if(tableId==='cc-table') row.innerHTML = `<td><input class="cc-name debt-name" value="${data?.name||''}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.balance||0)}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.limit||0)}"></td><td>0%</td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
+        else if(tableId==='bills-table') row.innerHTML = `<td><input class="bill-name" value="${data?.name||''}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.cost||0)}"></td><td><input onchange="calculate()" value="${data?.due||'1st'}"></td><td><button class="btn-status ${data?.status||'unpaid'}" onclick="togglePaid(this)">${(data?.status||'unpaid').toUpperCase()}</button></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
+        else if(tableId==='card-table') row.innerHTML = `<td>${data.card}</td><td>${data.category}</td><td class="c-amt">${fmt(data.amt)}</td><td><button class="btn-del" style="display:inline-block" onclick="delRow(this)">X</button></td>`;
         calculate();
     }
-
     function delRow(btn) { btn.closest('tr').remove(); calculate(); }
-
-    function togglePaid(btn) {
-        btn.classList.toggle('unpaid'); btn.classList.toggle('paid');
-        btn.innerText = btn.classList.contains('paid') ? 'Paid' : 'Unpaid';
-        calculate();
-    }
-
+    function togglePaid(btn) { btn.classList.toggle('unpaid'); btn.classList.toggle('paid'); btn.innerText = btn.classList.contains('paid') ? 'PAID' : 'UNPAID'; calculate(); }
     function addCardSpend() {
-        const card = document.getElementById('card-sel').value;
-        const desc = document.getElementById('card-desc').value;
-        const amt = parseFloat(document.getElementById('card-amt').value) || 0;
-        if(amt === 0) return;
-        document.querySelectorAll('.debt-name').forEach(input => {
-            if(input.value.toLowerCase().trim() === desc.toLowerCase().trim()) {
-                const balInput = input.closest('tr').cells[1].querySelector('input');
-                balInput.value = (parseFloat(balInput.value) - amt).toFixed(2);
-            }
-        });
-        addRow('card-table', {card: card, category: desc, amt: amt.toFixed(2)});
-        document.getElementById('card-desc').value = ''; document.getElementById('card-amt').value = '';
-        calculate();
+        const c = document.getElementById('card-sel').value, d = document.getElementById('card-desc').value, a = clean(document.getElementById('card-amt').value);
+        if(!a) return;
+        document.querySelectorAll('.debt-name').forEach(i => { if(i.value.toLowerCase() === d.toLowerCase()) { let b = i.closest('tr').cells[1].querySelector('input'); b.value = fmt(clean(b.value) - a); }});
+        addRow('card-table', {card:c, category:d, amt:a}); document.getElementById('card-desc').value=''; document.getElementById('card-amt').value=''; calculate();
     }
-
     function calculate() {
-        let pInc = 0; document.querySelectorAll('#proj-income-table tbody tr').forEach(tr => pInc += parseFloat(tr.cells[1].querySelector('input').value) || 0);
-        document.getElementById('total-proj-inc').innerText = pInc.toFixed(2);
-        let aInc = 0; document.querySelectorAll('#act-income-table tbody tr').forEach(tr => aInc += parseFloat(tr.cells[2].querySelector('input').value) || 0);
-        document.getElementById('total-act-inc').innerText = aInc.toFixed(2);
-        document.getElementById('over-under-display').innerText = (aInc - pInc).toFixed(2);
-        let lBal = 0; document.querySelectorAll('#loan-table tbody tr').forEach(tr => lBal += parseFloat(tr.cells[1].querySelector('input').value) || 0);
-        document.getElementById('total-loan-bal').innerText = lBal.toLocaleString(undefined, {minimumFractionDigits:2});
-        let ccBal = 0; document.querySelectorAll('#cc-table tbody tr').forEach(tr => {
-            const b = parseFloat(tr.cells[1].querySelector('input').value) || 0;
-            const l = parseFloat(tr.cells[2].querySelector('input').value) || 1;
-            ccBal += b; tr.cells[3].innerText = ((b/l)*100).toFixed(0) + '%';
-        });
-        document.getElementById('total-cc-bal').innerText = ccBal.toLocaleString(undefined, {minimumFractionDigits:2});
-        let tBill = 0, pBill = 0; document.querySelectorAll('#bills-table tbody tr').forEach(tr => {
-            const cost = parseFloat(tr.cells[1].querySelector('input').value) || 0;
-            tBill += cost; if(tr.cells[3].querySelector('button').classList.contains('paid')) pBill += cost;
-        });
-        document.getElementById('total-bills-cost').innerText = tBill.toFixed(2);
-        document.getElementById('total-paid-bills').innerText = pBill.toFixed(2);
-        let eTotal = 0; document.querySelectorAll('.c-amt').forEach(td => eTotal += parseFloat(td.innerText) || 0);
-        document.getElementById('total-card-spent').innerText = eTotal.toFixed(2);
-        const totalOut = pBill + eTotal;
-        document.getElementById('sum-inc').innerText = '$' + aInc.toFixed(2);
-        document.getElementById('sum-out').innerText = '$' + totalOut.toFixed(2);
-        document.getElementById('sum-net').innerText = '$' + (aInc - totalOut).toFixed(2);
+        let pI=0,aI=0,lB=0,cB=0,cL=0,tB=0,pB=0,eT=0;
+        document.querySelectorAll('#proj-income-table tbody tr').forEach(r => pI += clean(r.cells[1].querySelector('input').value));
+        document.querySelectorAll('#act-income-table tbody tr').forEach(r => aI += clean(r.cells[2].querySelector('input').value));
+        document.querySelectorAll('#loan-table tbody tr').forEach(r => lB += clean(r.cells[1].querySelector('input').value));
+        document.querySelectorAll('#cc-table tbody tr').forEach(r => { let b=clean(r.cells[1].querySelector('input').value), l=clean(r.cells[2].querySelector('input').value); cB+=b; cL+=l; r.cells[3].innerText = (l>0?((b/l)*100).toFixed(0):0)+'%'; });
+        document.querySelectorAll('#bills-table tbody tr').forEach(r => { let c=clean(r.cells[1].querySelector('input').value); tB+=c; if(r.cells[3].querySelector('button').classList.contains('paid')) pB+=c; });
+        document.querySelectorAll('.c-amt').forEach(t => eT += clean(t.innerText));
+        document.getElementById('total-proj-inc').innerText = fmt(pI); document.getElementById('total-act-inc').innerText = fmt(aI); document.getElementById('over-under-display').innerText = fmt(aI-pI);
+        document.getElementById('total-loan-bal').innerText = fmt(lB); document.getElementById('total-cc-bal').innerText = fmt(cB); document.getElementById('total-cc-avail').innerText = fmt(cL-cB);
+        document.getElementById('total-bills-cost').innerText = fmt(tB); document.getElementById('total-paid-bills').innerText = fmt(pB); document.getElementById('total-card-spent').innerText = fmt(eT);
+        document.getElementById('sum-inc').innerText = fmt(aI); document.getElementById('sum-out').innerText = fmt(pB+eT); document.getElementById('sum-net').innerText = fmt(aI-(pB+eT));
         updateSelectors();
     }
-
     function updateSelectors() {
-        const sel = document.getElementById('card-sel');
-        const currentVal = sel.value;
-        const options = ["Citi", "Checking Mitch", "Checking Dee"];
-        document.querySelectorAll('.cc-name').forEach(i => options.push(i.value));
-        sel.innerHTML = [...new Set(options)].map(c => `<option value="${c}">${c}</option>`).join('');
-        if(options.includes(currentVal)) sel.value = currentVal;
-        const dl = document.getElementById('category-options');
-        let catOpts = ["Groceries", "Gas", "Starbucks", "Dining"];
-        document.querySelectorAll('.bill-name, .debt-name').forEach(el => catOpts.push(el.value));
-        dl.innerHTML = [...new Set(catOpts)].map(o => `<option value="${o}">`).join('');
+        const s = document.getElementById('card-sel'), v = s.value, o = ["Citi","Checking Mitch","Checking Dee"];
+        document.querySelectorAll('.cc-name').forEach(i => o.push(i.value)); s.innerHTML = [...new Set(o)].map(c => `<option value="${c}">${c}</option>`).join(''); if(o.includes(v)) s.value = v;
+        const dl = document.getElementById('category-options'), co = ["Groceries","Gas","Starbucks"];
+        document.querySelectorAll('.bill-name, .debt-name').forEach(i => co.push(i.value)); dl.innerHTML = [...new Set(co)].map(c => `<option value="${c}">`).join('');
     }
-
-    function loadMonth(monthName) {
-        window.currentMonth = monthName;
-        const data = window.budgetData[monthName];
-        document.querySelectorAll('table tbody').forEach(tb => tb.innerHTML = '');
-        if(data.projIncome) data.projIncome.forEach(d => addRow('proj-income-table', d));
-        if(data.actIncome) data.actIncome.forEach(d => addRow('act-income-table', d));
-        if(data.loans) data.loans.forEach(d => addRow('loan-table', d));
-        if(data.cc) data.cc.forEach(d => addRow('cc-table', d));
-        if(data.bills) data.bills.forEach(d => addRow('bills-table', d));
-        if(data.extra) data.extra.forEach(d => addRow('card-table', d));
-        sortBills();
-        calculate();
-    }
-
-    function switchMonth() {
-        loadMonth(document.getElementById('month-selector').value);
-    }
-
-    function startNewMonth() {
-        const newMonthName = prompt("Enter Name for New Budget (e.g. July 2026):");
-        if(!newMonthName || window.budgetData[newMonthName]) return alert("Month already exists or invalid name.");
-        const prev = window.budgetData[window.currentMonth];
-        window.budgetData[newMonthName] = {
-            projIncome: JSON.parse(JSON.stringify(prev.projIncome || [])),
-            actIncome: [], 
-            loans: JSON.parse(JSON.stringify(prev.loans || [])),
-            cc: JSON.parse(JSON.stringify(prev.cc || [])),
-            bills: (prev.bills || []).map(b => ({...b, status: 'unpaid'})), 
-            extra: []
-        };
-        updateMonthDropdown();
-        document.getElementById('month-selector').value = newMonthName;
-        loadMonth(newMonthName);
-    }
-
-    function updateMonthDropdown() {
-        const sel = document.getElementById('month-selector');
-        sel.innerHTML = Object.keys(window.budgetData).map(m => `<option value="${m}">${m}</option>`).join('');
-    }
+    function loadMonth(m) { window.currentMonth = m; document.getElementById('month-selector').value = m; document.querySelectorAll('table tbody').forEach(b => b.innerHTML=''); const d = window.budgetData[m]; d.projIncome?.forEach(x => addRow('proj-income-table', x)); d.actIncome?.forEach(x => addRow('act-income-table', x)); d.loans?.forEach(x => addRow('loan-table', x)); d.cc?.forEach(x => addRow('cc-table', x)); d.bills?.forEach(x => addRow('bills-table', x)); d.extra?.forEach(x => addRow('card-table', x)); calculate(); }
+    function switchMonth() { loadMonth(document.getElementById('month-selector').value); }
+    function startNewMonth() { let n = prompt("New Month Name:"); if(!n || window.budgetData[n]) return; let p = window.budgetData[window.currentMonth]; window.budgetData[n] = { projIncome: JSON.parse(JSON.stringify(p.projIncome||[])), actIncome:[], loans:JSON.parse(JSON.stringify(p.loans||[])), cc:JSON.parse(JSON.stringify(p.cc||[])), bills:(p.bills||[]).map(b=>({...b, status:'unpaid'})), extra:[] }; updateMonthDropdown(); loadMonth(n); }
+    function updateMonthDropdown() { document.getElementById('month-selector').innerHTML = Object.keys(window.budgetData).map(m => `<option value="${m}">${m}</option>`).join(''); }
 </script>
 </body>
 </html>
