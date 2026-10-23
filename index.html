@@ -3,137 +3,1495 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Budget Dashboard</title>
+    <title>Master Budget & Weekly Dashboard</title>
     <style>
-        :root { --primary-bg: #1a5276; --income-blue: #d4e6f1; --debt-pink: #f5eef8; --bills-green: #e9f7ef; --paid-green: #27ae60; --unpaid-red: #e74c3c; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--primary-bg); margin: 0; padding: 20px; font-size: 12px; }
-        .header-controls { display: flex; justify-content: space-between; align-items: center; max-width: 1800px; margin: 0 auto 20px auto; color: white; }
-        .dashboard-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(430px, 1fr)); gap: 15px; max-width: 1800px; margin: 0 auto; align-items: start; }
-        .section-card { background: white; padding: 15px; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        h2 { margin-top: 0; display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; border-bottom: 2px solid #333; padding-bottom: 5px; }
-        h3 { margin: 10px 0 5px 0; font-size: 0.9rem; color: #1a5276; border-bottom: 1px solid #ccc; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-        th { background: #f2f2f2; padding: 6px; text-align: left; border: 1px solid #ccc; }
-        td { padding: 3px 6px; border: 1px solid #ccc; }
-        input { width: 100%; border: 1px solid transparent; padding: 4px; box-sizing: border-box; background: transparent; font-size: 12px; }
-        .edit-active input { border: 1px solid #ddd; background: #fff; }
-        .btn-status { cursor: pointer; padding: 4px; border: none; border-radius: 3px; color: white; font-weight: bold; width: 100%; }
+        :root {
+            --primary-bg: #1a5276;
+            --income-blue: #d4e6f1;
+            --debt-pink: #f5eef8;
+            --bills-green: #e9f7ef;
+            --weekly-gold: #fcf3cf;
+            --paid-green: #27ae60;
+            --unpaid-red: #e74c3c;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--primary-bg);
+            margin: 0;
+            padding: 15px;
+            font-size: 12px;
+            color: #2c3e50;
+        }
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1800px;
+            margin: 0 auto 15px auto;
+            color: white;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .nav-tabs {
+            display: flex;
+            gap: 6px;
+        }
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 7px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+        .tab-btn.active {
+            background: white;
+            color: #1a5276;
+        }
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 15px;
+            max-width: 1800px;
+            margin: 0 auto;
+            align-items: start;
+        }
+        .section-card {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.25);
+        }
+        h2 {
+            margin-top: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.15rem;
+            border-bottom: 2px solid #333;
+            padding-bottom: 6px;
+        }
+        h3 {
+            margin: 12px 0 6px 0;
+            font-size: 0.95rem;
+            color: #1a5276;
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        th {
+            background: #f2f2f2;
+            padding: 6px;
+            text-align: left;
+            border: 1px solid #ccc;
+            font-weight: 600;
+        }
+        td {
+            padding: 4px 6px;
+            border: 1px solid #ccc;
+        }
+        input, select {
+            width: 100%;
+            border: 1px solid transparent;
+            padding: 4px;
+            box-sizing: border-box;
+            background: transparent;
+            font-size: 12px;
+            font-family: inherit;
+        }
+        .date-picker-trigger {
+            cursor: pointer;
+            background: #fdfefe !important;
+            border: 1px dashed #3498db !important;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+        .edit-active input, .edit-active select {
+            border: 1px solid #ccc;
+            background: #fff;
+        }
+        .btn-status {
+            cursor: pointer;
+            padding: 4px 6px;
+            border: none;
+            border-radius: 3px;
+            color: white;
+            font-weight: bold;
+            width: 100%;
+            font-size: 11px;
+        }
         .unpaid { background-color: var(--unpaid-red); }
         .paid { background-color: var(--paid-green); }
-        .btn-add { background: #2980b9; color: white; border: none; padding: 2px 6px; cursor: pointer; border-radius: 3px; }
-        .btn-del { background: #c0392b; color: white; border: none; cursor: pointer; border-radius: 3px; display: none; }
-        .edit-active .btn-del { display: inline-block; }
+        .btn-add {
+            background: #2980b9;
+            color: white;
+            border: none;
+            padding: 4px 9px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .btn-del {
+            background: #c0392b;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 3px;
+            padding: 2px 6px;
+            display: none;
+        }
+        .edit-active .btn-del {
+            display: inline-block;
+        }
         .income-bg { background-color: var(--income-blue); }
         .debt-bg { background-color: var(--debt-pink); }
         .bills-bg { background-color: var(--bills-green); }
-        .totals-row { font-weight: bold; background: rgba(0,0,0,0.05); }
-        .summary-box { grid-column: 1 / -1; background: #2c3e50; color: white; padding: 15px; display: flex; justify-content: space-around; border-radius: 4px; font-size: 1.2rem; margin-top: 20px; }
+        .weekly-bg { background-color: var(--weekly-gold); }
+        .totals-row {
+            font-weight: bold;
+            background: rgba(0,0,0,0.05);
+        }
+        .summary-box {
+            grid-column: 1 / -1;
+            background: #2c3e50;
+            color: white;
+            padding: 14px;
+            display: flex;
+            justify-content: space-around;
+            border-radius: 6px;
+            font-size: 1.15rem;
+            margin-top: 20px;
+            font-weight: 500;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .pill-badge {
+            font-size: 11px;
+            padding: 4px 9px;
+            border-radius: 12px;
+            background: #27ae60;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Popover Date Picker */
+        #date-picker-popover {
+            position: absolute;
+            background: white;
+            border: 2px solid #2980b9;
+            border-radius: 6px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            z-index: 10000;
+            padding: 8px;
+            width: 220px;
+        }
+        .date-popover-title {
+            font-weight: bold;
+            font-size: 11px;
+            color: #1a5276;
+            margin-bottom: 6px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 4px;
+        }
+        .date-opt-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 5px 8px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        .date-opt-btn:hover {
+            background: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .modal-content {
+            background: white;
+            width: 650px;
+            max-width: 95%;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .month-choice-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .month-choice-btn {
+            background: #ecf0f1;
+            border: 2px solid #bdc3c7;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            color: #2c3e50;
+            transition: all 0.2s;
+        }
+        .month-choice-btn:hover:not(:disabled) {
+            background: #d4e6f1;
+            border-color: #2980b9;
+            color: #1a5276;
+        }
+        .month-choice-btn.recommended {
+            border-color: #27ae60;
+            background: #eafaf1;
+            color: #1e8449;
+        }
+        .month-choice-btn:disabled {
+            background: #f2f2f2;
+            color: #999;
+            border-color: #e0e0e0;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body class="edit-inactive">
-<div class="header-controls">
-    <div><select id="month-selector" onchange="switchMonth()"></select><button class="btn-add" style="background:#8e44ad; margin-left:10px" onclick="startNewMonth()">+ Start New Month</button></div>
-    <div><button id="edit-toggle" class="btn-add" style="background:#f39c12" onclick="toggleEditMode()">Edit Mode: OFF</button><button class="btn-add" id="save-btn" style="background:#27ae60" onclick="saveToFirebase()">Save Progress</button></div>
-</div>
-<div class="dashboard-container">
-    <div class="section-card income-bg">
-        <h2>Income Planning</h2>
-        <h3>Projected <button class="btn-add" onclick="addRow('proj-income-table')">+</button></h3>
-        <table id="proj-income-table"><thead><tr><th>Source</th><th>Amt</th><th></th></tr></thead><tbody></tbody><tfoot><tr class="totals-row"><td>Total Projected</td><td id="total-proj-inc" colspan="2">$0.00</td></tr></tfoot></table>
-        <h3>Actual <button class="btn-add" onclick="addRow('act-income-table')">+</button></h3>
-        <table id="act-income-table"><thead><tr><th>Date</th><th>Source</th><th>Amt</th><th></th></tr></thead><tbody></tbody><tfoot><tr class="totals-row"><td colspan="2">Total Actual</td><td id="total-act-inc"></td><td></td></tr><tr class="totals-row"><td colspan="2">OVER/UNDER</td><td id="over-under-display"></td><td></td></tr></tfoot></table>
-    </div>
-    <div class="section-card debt-bg">
-        <h2>Debt</h2>
-        <h3>Loans <button class="btn-add" onclick="addRow('loan-table')">+</button></h3>
-        <table id="loan-table"><thead><tr><th>Lender</th><th>Balance</th><th>Original</th><th></th></tr></thead><tbody></tbody><tfoot><tr class="totals-row"><td>Remaining</td><td id="total-loan-bal" colspan="2">$0.00</td><td></td></tr></tfoot></table>
-        <h3>Cards <button class="btn-add" onclick="addRow('cc-table')">+</button></h3>
-        <table id="cc-table"><thead><tr><th>Card</th><th>Balance</th><th>Limit</th><th>%</th><th></th></tr></thead><tbody></tbody><tfoot><tr class="totals-row"><td>Total Bal</td><td id="total-cc-bal" colspan="3">$0.00</td><td></td></tr><tr class="totals-row"><td>Total Avail</td><td id="total-cc-avail" colspan="3">$0.00</td><td></td></tr></tfoot></table>
-    </div>
-    <div class="section-card bills-bg">
-        <h2>Bills <button class="btn-add" onclick="addRow('bills-table')">+</button></h2>
-        <table id="bills-table"><thead><tr><th>Bill</th><th>Cost</th><th>Due</th><th>Status</th><th></th></tr></thead><tbody></tbody><tfoot><tr class="totals-row"><td>Total</td><td id="total-bills-cost">$0.00</td><td colspan="3" style="text-align:right">Paid: <span id="total-paid-bills">$0.00</span></td></tr></tfoot></table>
-    </div>
-    <div class="section-card">
-        <h2>Extras</h2>
-        <div style="margin-bottom:10px;"><select id="card-sel"></select><input type="text" id="card-desc" list="category-options" placeholder="Category" style="width:100px; border:1px solid #ccc"><datalist id="category-options"></datalist><input type="text" id="card-amt" placeholder="$" style="width:60px; border:1px solid #ccc" onchange="this.value=fmt(this.value)"><button class="btn-add" onclick="addCardSpend()">Add</button></div>
-        <table id="card-table"><thead><tr><th>Card</th><th>Cat</th><th>Amt</th><th></th></tr></thead><tbody></tbody><tfoot><tr class="totals-row"><td>Total</td><td colspan="2" id="total-card-spent" style="text-align:right">$0.00</td><td></td></tr></tfoot></table>
-    </div>
-</div>
-<div class="summary-box"><div>Actual: <span id="sum-inc">$0.00</span></div><div>Paid Out: <span id="sum-out">$0.00</span></div><div>Net: <span id="sum-net">$0.00</span></div></div>
 
+<div class="header-controls">
+    <div style="display:flex; align-items:center; gap:8px;">
+        <select id="month-selector" onchange="switchMonth()" style="background:white; border-radius:3px; padding:5px 8px; font-weight:bold;"></select>
+        <button class="btn-add" style="background:#8e44ad;" onclick="openNewMonthModal()">+ Start New Month</button>
+        <button class="btn-add" style="background:#16a085;" onclick="openMasterBillsModal()">⚙️ Master Recurring Bills</button>
+    </div>
+
+    <!-- View Switcher -->
+    <div class="nav-tabs">
+        <button id="tab-monthly" class="tab-btn active" onclick="switchView('monthly')">📅 Monthly Overview</button>
+        <button id="tab-weekly" class="tab-btn" onclick="switchView('weekly')">☀️ Sunday Weekly Planner</button>
+    </div>
+
+    <div style="display:flex; gap:6px;">
+        <button id="edit-toggle" class="btn-add" style="background:#f39c12;" onclick="toggleEditMode()">Edit Mode: OFF</button>
+        <button class="btn-add" id="save-btn" style="background:#27ae60;" onclick="saveToFirebase()">Save Progress</button>
+    </div>
+</div>
+
+<!-- ==================== MONTHLY VIEW ==================== -->
+<div id="monthly-view">
+    <div class="dashboard-container">
+        <!-- Income Section -->
+        <div class="section-card income-bg">
+            <h2>Income Planning</h2>
+            <h3>Projected <button class="btn-add" onclick="addRow('proj-income-table')">+</button></h3>
+            <table id="proj-income-table">
+                <thead><tr><th>Source</th><th>Amt</th><th></th></tr></thead>
+                <tbody></tbody>
+                <tfoot><tr class="totals-row"><td>Total Projected</td><td id="total-proj-inc" colspan="2">$0.00</td></tr></tfoot>
+            </table>
+            
+            <h3>Actual <button class="btn-add" onclick="addRow('act-income-table')">+</button></h3>
+            <table id="act-income-table">
+                <thead><tr><th>Date</th><th>Source</th><th>Amt</th><th></th></tr></thead>
+                <tbody></tbody>
+                <tfoot>
+                    <tr class="totals-row"><td colspan="2">Total Actual</td><td id="total-act-inc">$0.00</td><td></td></tr>
+                    <tr class="totals-row"><td colspan="2">OVER/UNDER</td><td id="over-under-display">$0.00</td><td></td></tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Debt Section -->
+        <div class="section-card debt-bg">
+            <h2>Debt</h2>
+            <h3>Loans <button class="btn-add" onclick="addRow('loan-table')">+</button></h3>
+            <table id="loan-table">
+                <thead><tr><th>Lender</th><th>Balance</th><th>Original</th><th></th></tr></thead>
+                <tbody></tbody>
+                <tfoot><tr class="totals-row"><td>Remaining</td><td id="total-loan-bal" colspan="2">$0.00</td></tr></tfoot>
+            </table>
+
+            <h3>Cards <button class="btn-add" onclick="addRow('cc-table')">+</button></h3>
+            <table id="cc-table">
+                <thead><tr><th>Card</th><th>Balance</th><th>Limit</th><th>%</th><th></th></tr></thead>
+                <tbody></tbody>
+                <tfoot>
+                    <tr class="totals-row"><td>Total Bal</td><td id="total-cc-bal" colspan="3">$0.00</td><td></td></tr>
+                    <tr class="totals-row"><td>Total Avail</td><td id="total-cc-avail" colspan="3">$0.00</td><td></td></tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Bills Section -->
+        <div class="section-card bills-bg">
+            <h2>
+                Monthly Bills
+                <div>
+                    <button class="btn-add" style="background:#16a085; font-size:10px; margin-right:4px;" onclick="reloadBillsFromMaster()">Sync from Master</button>
+                    <button class="btn-add" onclick="addRow('bills-table')">+</button>
+                </div>
+            </h2>
+            <p style="margin:0 0 6px 0; font-size:11px; color:#555;">Due dates use standard day format (e.g. 1st, 26th):</p>
+            <table id="bills-table">
+                <thead><tr><th>Bill</th><th>Cost</th><th>Due Date</th><th>Status</th><th></th></tr></thead>
+                <tbody></tbody>
+                <tfoot>
+                    <tr class="totals-row">
+                        <td>Total</td><td id="total-bills-cost">$0.00</td>
+                        <td colspan="3" style="text-align:right">Paid: <span id="total-paid-bills">$0.00</span></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Extras Section -->
+        <div class="section-card">
+            <h2>Extras & Variable Spend</h2>
+            <div style="margin-bottom:10px; display:flex; gap:5px;">
+                <select id="card-sel" style="border:1px solid #ccc; background:white;"></select>
+                <input type="text" id="card-desc" list="category-options" placeholder="Category" style="border:1px solid #ccc; background:white;">
+                <datalist id="category-options"></datalist>
+                <input type="text" id="card-amt" placeholder="$" style="width:70px; border:1px solid #ccc; background:white;" onchange="this.value=fmt(this.value)">
+                <button class="btn-add" onclick="addCardSpend()">Add</button>
+            </div>
+            <table id="card-table">
+                <thead><tr><th>Account/Card</th><th>Category</th><th>Amt</th><th></th></tr></thead>
+                <tbody></tbody>
+                <tfoot><tr class="totals-row"><td>Total</td><td colspan="2" id="total-card-spent" style="text-align:right">$0.00</td><td></td></tr></tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- Monthly Summary Bar -->
+    <div class="summary-box">
+        <div>Actual Income: <span id="sum-inc">$0.00</span></div>
+        <div>Paid Out: <span id="sum-out">$0.00</span></div>
+        <div>Net Left: <span id="sum-net">$0.00</span></div>
+    </div>
+</div>
+
+<!-- ==================== WEEKLY VIEW ==================== -->
+<div id="weekly-view" class="hidden">
+    <div style="max-width:1800px; margin:0 auto 15px auto; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <label style="color:white; font-weight:bold; font-size:13px;">Upcoming Week (Sunday to Saturday):</label>
+        <select id="week-selector" onchange="switchWeek()" style="width:auto; background:white; font-weight:bold; border-radius:3px; padding:6px 12px; font-size:13px;">
+            <!-- Populated dynamically with Sunday weeks -->
+        </select>
+        <span class="pill-badge" id="active-week-label">Sunday Cycle</span>
+    </div>
+
+    <div class="dashboard-container">
+        <!-- Sunday Starting Balances -->
+        <div class="section-card weekly-bg">
+            <h2>Sunday Bank Balances <button class="btn-add" onclick="addWeeklyBankRow()">+</button></h2>
+            <p style="margin:0 0 10px 0; font-size:11px; color:#555;">Actual cash in checking on Sunday morning:</p>
+            <table id="weekly-bank-table">
+                <thead><tr><th>Account Name</th><th>Starting Balance</th><th></th></tr></thead>
+                <tbody></tbody>
+                <tfoot>
+                    <tr class="totals-row"><td>Total Sunday Cash</td><td id="weekly-total-start-cash" colspan="2">$0.00</td></tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Weekly Income Checklist -->
+        <div class="section-card income-bg">
+            <h2>Expected Income This Week <button class="btn-add" onclick="addWeeklyIncomeRow()">+</button></h2>
+            <table id="weekly-income-table">
+                <thead><tr><th>Expected Date (Click)</th><th>Source</th><th>Amt</th><th>Received?</th><th></th></tr></thead>
+                <tbody></tbody>
+                <tfoot>
+                    <tr class="totals-row"><td colspan="2">Total Expected</td><td id="weekly-total-exp-inc">$0.00</td><td colspan="2" style="text-align:right">Rec'd: <span id="weekly-total-rec-inc">$0.00</span></td></tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Weekly Bills Due Checklist -->
+        <div class="section-card bills-bg">
+            <h2>
+                Bills Due This Week
+                <div>
+                    <button class="btn-add" style="background:#16a085; font-size:10px; margin-right:4px;" onclick="importDueBillsToWeek()">+ Import Due Bills</button>
+                    <button class="btn-add" onclick="addWeeklyNonRecurringBill()">+ Non-Recurring Bill</button>
+                </div>
+            </h2>
+            <p style="margin:0 0 10px 0; font-size:11px; color:#555;">Synced with Monthly Overview. Only imports bills due in this week's date span:</p>
+            <table id="weekly-bills-table">
+                <thead><tr><th>Bill</th><th>Due Date (Click)</th><th>Amt</th><th>Status</th><th></th></tr></thead>
+                <tbody></tbody>
+                <tfoot>
+                    <tr class="totals-row"><td colspan="2">Total Due</td><td id="weekly-total-bills-due">$0.00</td><td colspan="2" style="text-align:right">Paid: <span id="weekly-total-bills-paid">$0.00</span></td></tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Weekly Out-of-Pocket / Extra Spending -->
+        <div class="section-card">
+            <h2>Week Variable Purchases</h2>
+            <div style="margin-bottom:10px; display:flex; gap:5px;">
+                <select id="w-card-sel" style="border:1px solid #ccc; background:white;"></select>
+                <input type="text" id="w-card-desc" list="category-options" placeholder="Store / Category" style="border:1px solid #ccc; background:white;">
+                <input type="text" id="w-card-amt" placeholder="$" style="width:70px; border:1px solid #ccc; background:white;" onchange="this.value=fmt(this.value)">
+                <button class="btn-add" onclick="addWeeklySpend()">Add</button>
+            </div>
+            <table id="weekly-spend-table">
+                <thead><tr><th>Account/Card</th><th>Category</th><th>Amt</th><th></th></tr></thead>
+                <tbody></tbody>
+                <tfoot>
+                    <tr class="totals-row"><td>Total Week Spend</td><td colspan="3" id="weekly-total-spent" style="text-align:right">$0.00</td></tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- Weekly Runway Projection Summary -->
+    <div class="summary-box" style="background:#1b4f72;">
+        <div>Sunday Cash: <span id="w-sum-start">$0.00</span></div>
+        <div>+ Expected Pay: <span id="w-sum-inc">$0.00</span></div>
+        <div>- Bills Due: <span id="w-sum-bills">$0.00</span></div>
+        <div>- Spent So Far: <span id="w-sum-spent">$0.00</span></div>
+        <div style="border-left:2px solid rgba(255,255,255,0.4); padding-left:14px; font-weight:bold;">
+            Projected Saturday Cash: <span id="w-sum-projected-end">$0.00</span>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== DATE PICKER POPOVER ==================== -->
+<div id="date-picker-popover" class="hidden">
+    <div class="date-popover-title">Select Day This Week</div>
+    <div id="date-picker-options"></div>
+</div>
+
+<!-- ==================== MASTER RECURRING BILLS MODAL ==================== -->
+<div id="master-bills-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #1a5276; padding-bottom:8px;">
+            <h2 style="margin:0; border:none;">⚙️ Master Recurring Bills Template</h2>
+            <button class="btn-del" style="display:inline-block;" onclick="closeMasterBillsModal()">X</button>
+        </div>
+        <p style="font-size:11px; color:#555; margin:10px 0;">Master templates automatically roll forward into every new month and populate both monthly and weekly calculations.</p>
+        <table id="master-bills-table">
+            <thead>
+                <tr>
+                    <th>Bill Name</th>
+                    <th>Default Cost</th>
+                    <th>Default Due (e.g. 1st, 26th)</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <button class="btn-add" onclick="addMasterBillRow()">+ Add Template Bill</button>
+
+        <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:8px;">
+            <button class="btn-add" style="background:#7f8c8d;" onclick="closeMasterBillsModal()">Cancel</button>
+            <button class="btn-add" style="background:#27ae60;" onclick="saveMasterBillsModal()">Save Master Template</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== START NEW MONTH MODAL ==================== -->
+<div id="new-month-modal" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width:520px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #8e44ad; padding-bottom:8px;">
+            <h2 style="margin:0; border:none; color:#8e44ad;">+ Start New Month</h2>
+            <button class="btn-del" style="display:inline-block;" onclick="closeNewMonthModal()">X</button>
+        </div>
+        <p style="font-size:12px; color:#555; margin:12px 0 6px 0;">
+            Select an upcoming month to initialize. Debt, Cards, Master Recurring Bills, and Projected Income will roll forward automatically:
+        </p>
+
+        <div id="month-options-container" class="month-choice-grid"></div>
+
+        <div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
+            <label style="font-weight:bold; font-size:11px;">Or enter custom month name:</label>
+            <div style="display:flex; gap:6px; margin-top:5px;">
+                <input type="text" id="custom-month-input" placeholder="e.g. July 2027" style="border:1px solid #ccc; background:#fff; padding:6px;">
+                <button class="btn-add" style="background:#8e44ad;" onclick="createSelectedMonth(document.getElementById('custom-month-input').value)">Create</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== FIREBASE INTEGRATION MODULE ==================== -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    const firebaseConfig = { apiKey: "AIzaSyBopbvieG6FUJvMbmCzLVs05NtniD9Rv00", authDomain: "beckner-budget.firebaseapp.com", projectId: "beckner-budget", storageBucket: "beckner-budget.firebasestorage.app", messagingSenderId: "971154430839", appId: "1:971154430839:web:40e2d3d808716199525f72" };
-    const app = initializeApp(firebaseConfig); const db = getFirestore(app);
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBopbvieG6FUJvMbmCzLVs05NtniD9Rv00",
+        authDomain: "beckner-budget.firebaseapp.com",
+        projectId: "beckner-budget",
+        storageBucket: "beckner-budget.firebasestorage.app",
+        messagingSenderId: "971154430839",
+        appId: "1:971154430839:web:40e2d3d808716199525f72"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Save everything (all months, weeks, and master bills template) to Firestore
     window.saveToFirebase = async function() {
-        const data = {
-            projIncome: Array.from(document.querySelectorAll('#proj-income-table tbody tr')).map(tr => ({ source: tr.cells[0].querySelector('input').value, amount: clean(tr.cells[1].querySelector('input').value) })),
-            actIncome: Array.from(document.querySelectorAll('#act-income-table tbody tr')).map(tr => ({ date: tr.cells[0].querySelector('input').value, source: tr.cells[1].querySelector('input').value, amount: clean(tr.cells[2].querySelector('input').value) })),
-            loans: Array.from(document.querySelectorAll('#loan-table tbody tr')).map(tr => ({ lender: tr.cells[0].querySelector('input').value, balance: clean(tr.cells[1].querySelector('input').value), original: clean(tr.cells[2].querySelector('input').value) })),
-            cc: Array.from(document.querySelectorAll('#cc-table tbody tr')).map(tr => ({ name: tr.cells[0].querySelector('input').value, balance: clean(tr.cells[1].querySelector('input').value), limit: clean(tr.cells[2].querySelector('input').value) })),
-            bills: Array.from(document.querySelectorAll('#bills-table tbody tr')).map(tr => ({ name: tr.cells[0].querySelector('input').value, cost: clean(tr.cells[1].querySelector('input').value), due: tr.cells[2].querySelector('input').value, status: tr.cells[3].querySelector('button').classList.contains('paid') ? 'paid' : 'unpaid' })),
-            extra: Array.from(document.querySelectorAll('#card-table tbody tr')).map(tr => ({ card: tr.cells[0].innerText, category: tr.cells[1].innerText, amt: clean(tr.cells[2].innerText) }))
+        syncCurrentWeekToState();
+        syncCurrentMonthToState();
+
+        const payload = {
+            allMonths: window.budgetData,
+            masterRecurringBills: window.masterRecurringBills || []
         };
-        window.budgetData[window.currentMonth] = data;
-        try { await setDoc(doc(db, "budgets", "masterData"), { allMonths: window.budgetData }); alert("Saved!"); } catch (e) { alert("Error: " + e.message); }
-    }
+
+        try {
+            await setDoc(doc(db, "budgets", "masterData"), payload);
+            alert("Saved successfully to Firebase!");
+        } catch (e) {
+            alert("Error saving: " + e.message);
+        }
+    };
+
+    // Load from Firestore
     window.loadFromFirebase = async function() {
-        const docSnap = await getDoc(doc(db, "budgets", "masterData"));
-        if (docSnap.exists()) { window.budgetData = docSnap.data().allMonths; updateMonthDropdown(); loadMonth(Object.keys(window.budgetData).pop()); }
-        else { window.budgetData["June 2026"] = { projIncome: [], actIncome: [], loans: [], cc: [], bills: [], extra: [] }; updateMonthDropdown(); loadMonth("June 2026"); }
+        try {
+            const docSnap = await getDoc(doc(db, "budgets", "masterData"));
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                window.budgetData = data.allMonths || {};
+                window.masterRecurringBills = data.masterRecurringBills || defaultMasterBills();
+
+                // Ensure syncIds exist for backward compatibility
+                upgradeExistingData();
+
+                updateMonthDropdown();
+                const latestMonth = Object.keys(window.budgetData).pop() || "June 2026";
+                loadMonth(latestMonth);
+            } else {
+                initDefaultDataset();
+            }
+        } catch(e) {
+            console.error("Firestore loading error: ", e);
+            initDefaultDataset();
+        }
+    };
+
+    function initDefaultDataset() {
+        window.masterRecurringBills = defaultMasterBills();
+        window.budgetData = { "October 2026": createMonthFromTemplates("October 2026") };
+        updateMonthDropdown();
+        loadMonth("October 2026");
     }
+
+    function upgradeExistingData() {
+        Object.keys(window.budgetData).forEach(mKey => {
+            const m = window.budgetData[mKey];
+            if (m.bills) {
+                m.bills.forEach(b => { if(!b.syncId) b.syncId = genSyncId(); });
+            }
+            if (m.actIncome) {
+                m.actIncome.forEach(a => { if(!a.syncId) a.syncId = genSyncId(); });
+            }
+            if (m.extra) {
+                m.extra.forEach(e => { if(!e.syncId) e.syncId = genSyncId(); });
+            }
+            if (!m.weeks) m.weeks = {};
+        });
+    }
+
     window.loadFromFirebase();
 </script>
 
 <script>
-    let isEditMode = false; window.budgetData = {};
-    function toggleEditMode() { isEditMode = !isEditMode; document.body.className = isEditMode ? 'edit-active' : 'edit-inactive'; document.getElementById('edit-toggle').innerText = isEditMode ? "Edit Mode: ON" : "Edit Mode: OFF"; }
-    function fmt(v) { return '$' + (parseFloat(String(v).replace(/[^0-9.-]+/g,"")) || 0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
-    function clean(v) { return parseFloat(String(v).replace(/[^0-9.-]+/g,"")) || 0; }
+    let isEditMode = false;
+    window.budgetData = {};
+    window.masterRecurringBills = [];
+    window.currentMonth = "October 2026";
+    window.currentWeekKey = "";
+    let activeDateTargetInput = null;
+
+    const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+    function defaultMasterBills() {
+        return [
+            { name: "Rent / Mortgage", cost: 1650, due: "1st" },
+            { name: "Car Insurance", cost: 175, due: "3rd" },
+            { name: "Electric", cost: 140, due: "26th" },
+            { name: "Water / Trash", cost: 85, due: "28th" },
+            { name: "Internet", cost: 80, due: "30th" }
+        ];
+    }
+
+    function genSyncId() {
+        return 'sync_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+    }
+
+    function parseMonthYear(str) {
+        const parts = str.split(' ');
+        let mIdx = 9; // Oct default
+        let year = 2026;
+        if (parts.length >= 2) {
+            const foundIdx = MONTH_NAMES.findIndex(m => m.toLowerCase() === parts[0].toLowerCase());
+            if (foundIdx !== -1) mIdx = foundIdx;
+            const parsedY = parseInt(parts[1]);
+            if (!isNaN(parsedY)) year = parsedY;
+        }
+        return { monthIdx: mIdx, year };
+    }
+
+    // STRICT SUNDAY CYCLE RULE: Week belongs to the month where Sunday falls
+    function getSundayWeeksForMonth(monthYearStr) {
+        const { monthIdx, year } = parseMonthYear(monthYearStr);
+        const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
+        const shortMonth = MONTH_NAMES[monthIdx].substring(0, 3).toUpperCase();
+        
+        let weeks = [];
+        for (let d = 1; d <= daysInMonth; d++) {
+            const date = new Date(year, monthIdx, d);
+            if (date.getDay() === 0) { // Sunday
+                const sunDate = d;
+                const satDateObj = new Date(year, monthIdx, d + 6);
+                const satDay = satDateObj.getDate();
+                const satMonthShort = MONTH_NAMES[satDateObj.getMonth()].substring(0, 3).toUpperCase();
+
+                const label = `${shortMonth} ${sunDate} - ${satMonthShort} ${satDay}`;
+                const key = `week_${year}_${monthIdx}_${sunDate}`;
+                weeks.push({
+                    key,
+                    label,
+                    startYear: year,
+                    startMonth: monthIdx,
+                    startDay: sunDate,
+                    endYear: satDateObj.getFullYear(),
+                    endMonth: satDateObj.getMonth(),
+                    endDay: satDay
+                });
+            }
+        }
+
+        const firstDay = new Date(year, monthIdx, 1);
+        if (firstDay.getDay() !== 0) {
+            const firstSatDay = 7 - firstDay.getDay();
+            const label = `${shortMonth} 1 - ${shortMonth} ${firstSatDay}`;
+            const key = `week_${year}_${monthIdx}_1`;
+            weeks.unshift({
+                key,
+                label,
+                startYear: year,
+                startMonth: monthIdx,
+                startDay: 1,
+                endYear: year,
+                endMonth: monthIdx,
+                endDay: firstSatDay
+            });
+        }
+        return weeks;
+    }
+
+    function parseDueDayNumber(dueStr) {
+        if (!dueStr) return null;
+        const matches = dueStr.match(/\d+/);
+        return matches ? parseInt(matches[0], 10) : null;
+    }
+
+    /* ----------------- Popover Date Picker ----------------- */
+    function openDatePicker(inputElem) {
+        activeDateTargetInput = inputElem;
+        const popover = document.getElementById('date-picker-popover');
+        const container = document.getElementById('date-picker-options');
+        container.innerHTML = '';
+
+        const weeks = getSundayWeeksForMonth(window.currentMonth);
+        const curWeek = weeks.find(w => w.key === window.currentWeekKey) || weeks[0];
+
+        if (curWeek) {
+            for (let i = 0; i < 7; i++) {
+                const dayDate = new Date(curWeek.startYear, curWeek.startMonth, curWeek.startDay + i);
+                const dayName = DAY_NAMES[dayDate.getDay()];
+                const monName = MONTH_NAMES[dayDate.getMonth()].substring(0, 3);
+                const dayNum = dayDate.getDate();
+                const formatted = `${dayName} ${monName} ${dayNum}`;
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'date-opt-btn';
+                btn.innerText = formatted;
+                btn.onclick = function() {
+                    activeDateTargetInput.value = formatted;
+                    closeDatePicker();
+                    
+                    const row = activeDateTargetInput.closest('tr');
+                    const syncId = row.dataset.syncId;
+
+                    if (row.closest('#weekly-bills-table')) {
+                        syncBillDueToMonthly(syncId, formatted);
+                    }
+                    if (row.closest('#weekly-income-table') && row.querySelector('.btn-status')?.classList.contains('paid')) {
+                        const mRow = document.querySelector(`#act-income-table tbody tr[data-sync-id="${syncId}"]`);
+                        if (mRow) mRow.cells[0].querySelector('input').value = formatted;
+                    }
+                    calculateWeekly();
+                };
+                container.appendChild(btn);
+            }
+        }
+
+        const rect = inputElem.getBoundingClientRect();
+        popover.style.top = `${window.scrollY + rect.bottom + 4}px`;
+        popover.style.left = `${window.scrollX + rect.left}px`;
+        popover.classList.remove('hidden');
+    }
+
+    function closeDatePicker() {
+        document.getElementById('date-picker-popover').classList.add('hidden');
+        activeDateTargetInput = null;
+    }
+
+    document.addEventListener('click', function(e) {
+        const popover = document.getElementById('date-picker-popover');
+        if (!popover.classList.contains('hidden')) {
+            if (!popover.contains(e.target) && !e.target.classList.contains('date-picker-trigger')) {
+                closeDatePicker();
+            }
+        }
+    });
+
+    /* ----------------- Smart "Start New Month" Modal ----------------- */
+    function openNewMonthModal() {
+        const container = document.getElementById('month-options-container');
+        container.innerHTML = '';
+
+        const { monthIdx: curM, year: curY } = parseMonthYear(window.currentMonth);
+        const existingMonths = Object.keys(window.budgetData);
+
+        let candidateMonths = [];
+        for (let i = 1; i <= 6; i++) {
+            let nextM = (curM + i) % 12;
+            let nextY = curY + Math.floor((curM + i) / 12);
+            let name = `${MONTH_NAMES[nextM]} ${nextY}`;
+            candidateMonths.push({ name });
+        }
+
+        let recommendedFound = false;
+        candidateMonths.forEach((item) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'month-choice-btn';
+
+            const alreadyExists = existingMonths.includes(item.name);
+            if (alreadyExists) {
+                btn.innerText = `${item.name} (Started)`;
+                btn.disabled = true;
+            } else {
+                btn.innerText = item.name;
+                if (!recommendedFound) {
+                    btn.classList.add('recommended');
+                    btn.innerText += " ★ (Next)";
+                    recommendedFound = true;
+                }
+                btn.onclick = () => createSelectedMonth(item.name);
+            }
+            container.appendChild(btn);
+        });
+
+        document.getElementById('new-month-modal').classList.remove('hidden');
+    }
+
+    function closeNewMonthModal() {
+        document.getElementById('new-month-modal').classList.add('hidden');
+        document.getElementById('custom-month-input').value = '';
+    }
+
+    function createSelectedMonth(name) {
+        name = name.trim();
+        if (!name) return;
+        if (window.budgetData[name]) {
+            alert(`${name} already exists! Switching to it now.`);
+            closeNewMonthModal();
+            loadMonth(name);
+            return;
+        }
+
+        syncCurrentWeekToState();
+        syncCurrentMonthToState();
+
+        const p = window.budgetData[window.currentMonth];
+        window.budgetData[name] = {
+            projIncome: JSON.parse(JSON.stringify(p?.projIncome || [])),
+            actIncome: [],
+            loans: JSON.parse(JSON.stringify(p?.loans || [])),
+            cc: JSON.parse(JSON.stringify(p?.cc || [])),
+            bills: (p?.bills && p.bills.length > 0)
+                ? p.bills.map(b => ({ ...b, status: 'unpaid', syncId: genSyncId() }))
+                : (window.masterRecurringBills || []).map(b => ({ ...b, status: 'unpaid', syncId: genSyncId() })),
+            extra: [],
+            weeks: {}
+        };
+
+        closeNewMonthModal();
+        updateMonthDropdown();
+        loadMonth(name);
+    }
+
+    /* ----------------- Master Template Management ----------------- */
+    function openMasterBillsModal() {
+        const tbody = document.querySelector('#master-bills-table tbody');
+        tbody.innerHTML = '';
+        (window.masterRecurringBills || []).forEach(b => addMasterBillRow(b));
+        document.getElementById('master-bills-modal').classList.remove('hidden');
+    }
+
+    function closeMasterBillsModal() {
+        document.getElementById('master-bills-modal').classList.add('hidden');
+    }
+
+    function addMasterBillRow(data = null) {
+        const tbody = document.querySelector('#master-bills-table tbody');
+        const r = tbody.insertRow();
+        r.innerHTML = `<td><input value="${data?.name || ''}" placeholder="Bill Name" style="border:1px solid #ccc; background:#fff;"></td>
+                       <td><input value="${fmt(data?.cost || 0)}" onchange="this.value=fmt(this.value)" placeholder="Cost" style="border:1px solid #ccc; background:#fff;"></td>
+                       <td><input value="${data?.due || '1st'}" placeholder="e.g. 1st, 26th" style="border:1px solid #ccc; background:#fff;"></td>
+                       <td><button class="btn-del" style="display:inline-block;" onclick="delRow(this)">X</button></td>`;
+    }
+
+    function saveMasterBillsModal() {
+        window.masterRecurringBills = Array.from(document.querySelectorAll('#master-bills-table tbody tr')).map(tr => ({
+            name: tr.cells[0].querySelector('input').value,
+            cost: clean(tr.cells[1].querySelector('input').value),
+            due: tr.cells[2].querySelector('input').value
+        })).filter(b => b.name.trim() !== '');
+
+        closeMasterBillsModal();
+        alert("Master Recurring Bills template updated! Click 'Save Progress' to save to Firebase.");
+    }
+
+    function reloadBillsFromMaster() {
+        if (confirm("Populate current month with your Master Recurring Bills?")) {
+            const tbody = document.querySelector('#bills-table tbody');
+            tbody.innerHTML = '';
+            (window.masterRecurringBills || []).forEach(b => {
+                addRow('bills-table', { name: b.name, cost: b.cost, due: b.due, status: 'unpaid' });
+            });
+            calculate();
+        }
+    }
+
+    function createMonthFromTemplates(monthYearStr) {
+        return {
+            projIncome: [
+                { source: "Paycheck Mitch", amount: 2600 },
+                { source: "Paycheck Dee", amount: 2400 }
+            ],
+            actIncome: [],
+            loans: [
+                { lender: "Auto Loan", balance: 8400, original: 15000 }
+            ],
+            cc: [
+                { name: "Citi", balance: 1200, limit: 6000 }
+            ],
+            bills: (window.masterRecurringBills || defaultMasterBills()).map(b => ({ ...b, status: 'unpaid', syncId: genSyncId() })),
+            extra: [],
+            weeks: {}
+        };
+    }
+
+    /* ----------------- Navigation & View Switching ----------------- */
+    function switchView(view) {
+        if (view === 'monthly') {
+            syncCurrentWeekToState();
+            document.getElementById('monthly-view').classList.remove('hidden');
+            document.getElementById('weekly-view').classList.add('hidden');
+            document.getElementById('tab-monthly').classList.add('active');
+            document.getElementById('tab-weekly').classList.remove('active');
+            calculate();
+        } else {
+            syncCurrentMonthToState();
+            document.getElementById('monthly-view').classList.add('hidden');
+            document.getElementById('weekly-view').classList.remove('hidden');
+            document.getElementById('tab-monthly').classList.remove('active');
+            document.getElementById('tab-weekly').classList.add('active');
+            refreshWeekDropdown();
+            loadWeek(window.currentWeekKey);
+        }
+    }
+
+    function toggleEditMode() {
+        isEditMode = !isEditMode;
+        document.body.className = isEditMode ? 'edit-active' : 'edit-inactive';
+        document.getElementById('edit-toggle').innerText = isEditMode ? "Edit Mode: ON" : "Edit Mode: OFF";
+    }
+
+    function fmt(v) {
+        return '$' + (parseFloat(String(v).replace(/[^0-9.-]+/g,"")) || 0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+    }
+
+    function clean(v) {
+        return parseFloat(String(v).replace(/[^0-9.-]+/g,"")) || 0;
+    }
+
+    /* ----------------- Monthly Operations ----------------- */
     function addRow(tableId, data = null) {
-        const tbody = document.getElementById(tableId).querySelector('tbody'); const row = tbody.insertRow();
-        if(tableId==='proj-income-table') row.innerHTML = `<td><input value="${data?.source||''}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.amount||0)}"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
-        else if(tableId==='act-income-table') row.innerHTML = `<td><input type="date" value="${data?.date||''}"></td><td><input value="${data?.source||''}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.amount||0)}"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
-        else if(tableId==='loan-table') row.innerHTML = `<td><input class="debt-name" value="${data?.lender||''}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.balance||0)}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.original||0)}"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
-        else if(tableId==='cc-table') row.innerHTML = `<td><input class="cc-name debt-name" value="${data?.name||''}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.balance||0)}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.limit||0)}"></td><td>0%</td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
-        else if(tableId==='bills-table') row.innerHTML = `<td><input class="bill-name" value="${data?.name||''}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.cost||0)}"></td><td><input onchange="calculate()" value="${data?.due||'1st'}"></td><td><button class="btn-status ${data?.status||'unpaid'}" onclick="togglePaid(this)">${(data?.status||'unpaid').toUpperCase()}</button></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
-        else if(tableId==='card-table') row.innerHTML = `<td>${data.card}</td><td>${data.category}</td><td class="c-amt">${fmt(data.amt)}</td><td><button class="btn-del" style="display:inline-block" onclick="delRow(this)">X</button></td>`;
+        const tbody = document.getElementById(tableId).querySelector('tbody');
+        const row = tbody.insertRow();
+        const syncId = data?.syncId || genSyncId();
+        row.dataset.syncId = syncId;
+
+        if(tableId === 'proj-income-table') {
+            row.innerHTML = `<td><input value="${data?.source||''}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.amount||0)}"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
+        } else if(tableId === 'act-income-table') {
+            row.innerHTML = `<td><input type="text" value="${data?.date||''}" placeholder="Date"></td><td><input value="${data?.source||''}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.amount||0)}"></td><td><button class="btn-del" onclick="delMonthlyActualIncomeRow(this)">X</button></td>`;
+        } else if(tableId === 'loan-table') {
+            row.innerHTML = `<td><input class="debt-name" value="${data?.lender||''}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.balance||0)}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.original||0)}"></td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
+        } else if(tableId === 'cc-table') {
+            row.innerHTML = `<td><input class="cc-name debt-name" value="${data?.name||''}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.balance||0)}"></td><td><input onchange="this.value=fmt(this.value);calculate()" value="${fmt(data?.limit||0)}"></td><td>0%</td><td><button class="btn-del" onclick="delRow(this)">X</button></td>`;
+        } else if(tableId === 'bills-table') {
+            row.innerHTML = `<td><input class="bill-name" value="${data?.name||''}" oninput="syncBillNameToWeekly('${syncId}', this.value)"></td>
+                             <td><input onchange="this.value=fmt(this.value);calculate();syncBillCostToWeekly('${syncId}', this.value)" value="${fmt(data?.cost||0)}"></td>
+                             <td><input onchange="calculate();syncBillDueToWeekly('${syncId}', this.value)" value="${data?.due||''}"></td>
+                             <td><button class="btn-status ${data?.status||'unpaid'}" onclick="toggleMonthlyPaid(this, '${syncId}')">${(data?.status||'unpaid').toUpperCase()}</button></td>
+                             <td><button class="btn-del" onclick="delMonthlyBillRow(this, '${syncId}')">X</button></td>`;
+        } else if(tableId === 'card-table') {
+            row.innerHTML = `<td>${data.card}</td><td>${data.category}</td><td class="c-amt">${fmt(data.amt)}</td><td><button class="btn-del" style="display:inline-block" onclick="delMonthlySpendRow(this, '${syncId}')">X</button></td>`;
+        }
         calculate();
     }
-    function delRow(btn) { btn.closest('tr').remove(); calculate(); }
-    function togglePaid(btn) { btn.classList.toggle('unpaid'); btn.classList.toggle('paid'); btn.innerText = btn.classList.contains('paid') ? 'PAID' : 'UNPAID'; calculate(); }
-    function addCardSpend() {
-        const c = document.getElementById('card-sel').value, d = document.getElementById('card-desc').value, a = clean(document.getElementById('card-amt').value);
-        if(!a) return;
-        document.querySelectorAll('.debt-name').forEach(i => { if(i.value.toLowerCase() === d.toLowerCase()) { let b = i.closest('tr').cells[1].querySelector('input'); b.value = fmt(clean(b.value) - a); }});
-        addRow('card-table', {card:c, category:d, amt:a}); document.getElementById('card-desc').value=''; document.getElementById('card-amt').value=''; calculate();
+
+    function delRow(btn) {
+        btn.closest('tr').remove();
+        calculate();
     }
+
+    function togglePaid(btn) {
+        btn.classList.toggle('unpaid');
+        btn.classList.toggle('paid');
+        btn.innerText = btn.classList.contains('paid') ? 'PAID' : 'UNPAID';
+        calculate();
+    }
+
+    function toggleMonthlyPaid(btn, syncId) {
+        togglePaid(btn);
+        const isPaid = btn.classList.contains('paid');
+        const wRow = document.querySelector(`#weekly-bills-table tbody tr[data-sync-id="${syncId}"]`);
+        if (wRow) {
+            const wBtn = wRow.querySelector('.btn-status');
+            wBtn.className = `btn-status ${isPaid ? 'paid' : 'unpaid'}`;
+            wBtn.innerText = isPaid ? 'PAID' : 'UNPAID';
+            calculateWeekly();
+        }
+    }
+
+    function delMonthlyBillRow(btn, syncId) {
+        btn.closest('tr').remove();
+        const wRow = document.querySelector(`#weekly-bills-table tbody tr[data-sync-id="${syncId}"]`);
+        if (wRow) wRow.remove();
+        calculate();
+        calculateWeekly();
+    }
+
+    function delMonthlyActualIncomeRow(btn) {
+        const row = btn.closest('tr');
+        const syncId = row.dataset.syncId;
+        row.remove();
+        if (syncId) {
+            const wRow = document.querySelector(`#weekly-income-table tbody tr[data-sync-id="${syncId}"]`);
+            if (wRow) {
+                const wBtn = wRow.querySelector('.btn-status');
+                wBtn.className = 'btn-status unpaid';
+                wBtn.innerText = 'UNPAID';
+                calculateWeekly();
+            }
+        }
+        calculate();
+    }
+
+    function delMonthlySpendRow(btn, syncId) {
+        btn.closest('tr').remove();
+        const wRow = document.querySelector(`#weekly-spend-table tbody tr[data-sync-id="${syncId}"]`);
+        if (wRow) wRow.remove();
+        calculate();
+        calculateWeekly();
+    }
+
+    function addCardSpend() {
+        const c = document.getElementById('card-sel').value;
+        const d = document.getElementById('card-desc').value;
+        const a = clean(document.getElementById('card-amt').value);
+        if(!a) return;
+
+        document.querySelectorAll('.debt-name').forEach(i => {
+            if(i.value.trim().toLowerCase() === d.trim().toLowerCase()) {
+                let b = i.closest('tr').cells[1].querySelector('input');
+                b.value = fmt(clean(b.value) - a);
+            }
+        });
+
+        addRow('card-table', { card: c, category: d, amt: a, syncId: genSyncId() });
+        document.getElementById('card-desc').value = '';
+        document.getElementById('card-amt').value = '';
+        calculate();
+    }
+
+    /* ----------------- Weekly Operations & Sync ----------------- */
+    function refreshWeekDropdown() {
+        const weeks = getSundayWeeksForMonth(window.currentMonth);
+        const sel = document.getElementById('week-selector');
+        sel.innerHTML = weeks.map(w => `<option value="${w.key}">${w.label}</option>`).join('');
+
+        if (!window.currentWeekKey || !weeks.some(w => w.key === window.currentWeekKey)) {
+            const targetWeek = weeks.find(w => w.label.includes('25')) || weeks[0];
+            window.currentWeekKey = targetWeek ? targetWeek.key : "";
+        }
+        sel.value = window.currentWeekKey;
+    }
+
+    function addWeeklyBankRow(data = null) {
+        const tbody = document.querySelector('#weekly-bank-table tbody');
+        const r = tbody.insertRow();
+        r.innerHTML = `<td><input value="${data?.account || ''}" placeholder="Account Name"></td>
+                       <td><input onchange="this.value=fmt(this.value);calculateWeekly()" value="${fmt(data?.balance || 0)}"></td>
+                       <td><button class="btn-del" onclick="delRowWeekly(this)">X</button></td>`;
+        calculateWeekly();
+    }
+
+    function addWeeklyIncomeRow(data = null) {
+        const tbody = document.querySelector('#weekly-income-table tbody');
+        const r = tbody.insertRow();
+        const syncId = data?.syncId || genSyncId();
+        r.dataset.syncId = syncId;
+
+        const rec = data?.received ? 'paid' : 'unpaid';
+        r.innerHTML = `<td><input type="text" class="date-picker-trigger" readonly onclick="openDatePicker(this)" value="${data?.date || ''}" placeholder="Click to choose date"></td>
+                       <td><input value="${data?.source || ''}" placeholder="Source"></td>
+                       <td><input onchange="this.value=fmt(this.value);calculateWeekly()" value="${fmt(data?.amount || 0)}"></td>
+                       <td><button class="btn-status ${rec}" onclick="toggleWeeklyIncomeReceived(this, '${syncId}')">${rec.toUpperCase()}</button></td>
+                       <td><button class="btn-del" onclick="delWeeklyIncomeRow(this, '${syncId}')">X</button></td>`;
+        calculateWeekly();
+    }
+
+    function toggleWeeklyIncomeReceived(btn, syncId) {
+        btn.classList.toggle('unpaid');
+        btn.classList.toggle('paid');
+        const isRec = btn.classList.contains('paid');
+        btn.innerText = isRec ? 'PAID' : 'UNPAID';
+
+        const row = btn.closest('tr');
+        const dt = row.cells[0].querySelector('input').value;
+        const src = row.cells[1].querySelector('input').value;
+        const amt = clean(row.cells[2].querySelector('input').value);
+
+        if (isRec) {
+            let existingRow = document.querySelector(`#act-income-table tbody tr[data-sync-id="${syncId}"]`);
+            if (!existingRow) {
+                addRow('act-income-table', { date: dt, source: src, amount: amt, syncId: syncId });
+            } else {
+                existingRow.cells[0].querySelector('input').value = dt;
+                existingRow.cells[1].querySelector('input').value = src;
+                existingRow.cells[2].querySelector('input').value = fmt(amt);
+            }
+        } else {
+            const existingRow = document.querySelector(`#act-income-table tbody tr[data-sync-id="${syncId}"]`);
+            if (existingRow) existingRow.remove();
+        }
+        calculate();
+        calculateWeekly();
+    }
+
+    function delWeeklyIncomeRow(btn, syncId) {
+        btn.closest('tr').remove();
+        const mRow = document.querySelector(`#act-income-table tbody tr[data-sync-id="${syncId}"]`);
+        if (mRow) mRow.remove();
+        calculate();
+        calculateWeekly();
+    }
+
+    function addWeeklyBillRow(data = null) {
+        const tbody = document.querySelector('#weekly-bills-table tbody');
+        const r = tbody.insertRow();
+        const syncId = data?.syncId || genSyncId();
+        r.dataset.syncId = syncId;
+
+        const stat = data?.status || 'unpaid';
+        r.innerHTML = `<td><input value="${data?.name || ''}" placeholder="Bill Name" oninput="syncBillNameToMonthly('${syncId}', this.value)"></td>
+                       <td><input type="text" class="date-picker-trigger" readonly onclick="openDatePicker(this)" value="${data?.due || ''}" placeholder="Click for date"></td>
+                       <td><input onchange="this.value=fmt(this.value);calculateWeekly();syncBillCostToMonthly('${syncId}', this.value)" value="${fmt(data?.cost || 0)}"></td>
+                       <td><button class="btn-status ${stat}" onclick="toggleWeeklyBillPaid(this, '${syncId}')">${stat.toUpperCase()}</button></td>
+                       <td><button class="btn-del" onclick="delWeeklyBillRow(this, '${syncId}')">X</button></td>`;
+        calculateWeekly();
+    }
+
+    function addWeeklyNonRecurringBill() {
+        const syncId = genSyncId();
+        addWeeklyBillRow({ name: "", cost: 0, due: "", status: 'unpaid', syncId });
+        addRow('bills-table', { name: "", cost: 0, due: "", status: 'unpaid', syncId });
+        calculate();
+        calculateWeekly();
+    }
+
+    function toggleWeeklyBillPaid(btn, syncId) {
+        btn.classList.toggle('unpaid');
+        btn.classList.toggle('paid');
+        const isPaid = btn.classList.contains('paid');
+        btn.innerText = isPaid ? 'PAID' : 'UNPAID';
+
+        const mRow = document.querySelector(`#bills-table tbody tr[data-sync-id="${syncId}"]`);
+        if (mRow) {
+            const mBtn = mRow.querySelector('.btn-status');
+            mBtn.className = `btn-status ${isPaid ? 'paid' : 'unpaid'}`;
+            mBtn.innerText = isPaid ? 'PAID' : 'UNPAID';
+        }
+        calculate();
+        calculateWeekly();
+    }
+
+    function delWeeklyBillRow(btn, syncId) {
+        btn.closest('tr').remove();
+        const mRow = document.querySelector(`#bills-table tbody tr[data-sync-id="${syncId}"]`);
+        if (mRow) mRow.remove();
+        calculate();
+        calculateWeekly();
+    }
+
+    function syncBillNameToMonthly(syncId, val) {
+        const mRow = document.querySelector(`#bills-table tbody tr[data-sync-id="${syncId}"]`);
+        if (mRow) mRow.cells[0].querySelector('input').value = val;
+    }
+    function syncBillCostToMonthly(syncId, val) {
+        const mRow = document.querySelector(`#bills-table tbody tr[data-sync-id="${syncId}"]`);
+        if (mRow) {
+            mRow.cells[1].querySelector('input').value = fmt(val);
+            calculate();
+        }
+    }
+    function syncBillDueToMonthly(syncId, val) {
+        const mRow = document.querySelector(`#bills-table tbody tr[data-sync-id="${syncId}"]`);
+        if (mRow) mRow.cells[2].querySelector('input').value = val;
+    }
+
+    function syncBillNameToWeekly(syncId, val) {
+        const wRow = document.querySelector(`#weekly-bills-table tbody tr[data-sync-id="${syncId}"]`);
+        if (wRow) wRow.cells[0].querySelector('input').value = val;
+    }
+    function syncBillCostToWeekly(syncId, val) {
+        const wRow = document.querySelector(`#weekly-bills-table tbody tr[data-sync-id="${syncId}"]`);
+        if (wRow) {
+            wRow.cells[2].querySelector('input').value = fmt(val);
+            calculateWeekly();
+        }
+    }
+    function syncBillDueToWeekly(syncId, val) {
+        const wRow = document.querySelector(`#weekly-bills-table tbody tr[data-sync-id="${syncId}"]`);
+        if (wRow) wRow.cells[1].querySelector('input').value = val;
+    }
+
+    function importDueBillsToWeek() {
+        const weeks = getSundayWeeksForMonth(window.currentMonth);
+        const curWeek = weeks.find(w => w.key === window.currentWeekKey);
+        if(!curWeek) {
+            alert("Please select a week first.");
+            return;
+        }
+
+        const startD = curWeek.startDay;
+        const endD = curWeek.endDay;
+        const isCrossMonth = curWeek.startMonth !== curWeek.endMonth;
+
+        const alreadyImportedSyncIds = Array.from(document.querySelectorAll('#weekly-bills-table tbody tr')).map(tr => tr.dataset.syncId);
+        let importedCount = 0;
+
+        document.querySelectorAll('#bills-table tbody tr').forEach(tr => {
+            const syncId = tr.dataset.syncId;
+            const name = tr.cells[0].querySelector('input').value.trim();
+            const cost = clean(tr.cells[1].querySelector('input').value);
+            const dueStr = tr.cells[2].querySelector('input').value.trim();
+            const status = tr.cells[3].querySelector('button').classList.contains('paid') ? 'paid' : 'unpaid';
+
+            const dayNum = parseDueDayNumber(dueStr);
+            if (!dayNum || !name) return;
+
+            let isDueThisWeek = false;
+            if (!isCrossMonth) {
+                if (dayNum >= startD && dayNum <= endD) isDueThisWeek = true;
+            } else {
+                if (dayNum >= startD || dayNum <= endD) isDueThisWeek = true;
+            }
+
+            if (isDueThisWeek && !alreadyImportedSyncIds.includes(syncId)) {
+                addWeeklyBillRow({ name, cost, due: dueStr, status, syncId });
+                importedCount++;
+            }
+        });
+
+        if(importedCount === 0) {
+            alert(`No new bills in your Monthly list have due dates during ${curWeek.label}.`);
+        }
+    }
+
+    function addWeeklySpend() {
+        const c = document.getElementById('w-card-sel').value;
+        const d = document.getElementById('w-card-desc').value;
+        const a = clean(document.getElementById('w-card-amt').value);
+        if(!a) return;
+
+        const syncId = genSyncId();
+        const tbody = document.querySelector('#weekly-spend-table tbody');
+        const r = tbody.insertRow();
+        r.dataset.syncId = syncId;
+        r.innerHTML = `<td>${c}</td><td>${d}</td><td class="w-spent-amt">${fmt(a)}</td><td><button class="btn-del" style="display:inline-block" onclick="delWeeklySpendRow(this, '${syncId}')">X</button></td>`;
+
+        addRow('card-table', { card: c, category: d, amt: a, syncId: syncId });
+
+        document.querySelectorAll('.debt-name').forEach(i => {
+            if(i.value.trim().toLowerCase() === d.trim().toLowerCase()) {
+                let b = i.closest('tr').cells[1].querySelector('input');
+                b.value = fmt(clean(b.value) - a);
+            }
+        });
+
+        document.getElementById('w-card-desc').value = '';
+        document.getElementById('w-card-amt').value = '';
+        calculateWeekly();
+        calculate();
+    }
+
+    function delWeeklySpendRow(btn, syncId) {
+        btn.closest('tr').remove();
+        const mRow = document.querySelector(`#card-table tbody tr[data-sync-id="${syncId}"]`);
+        if (mRow) mRow.remove();
+        calculate();
+        calculateWeekly();
+    }
+
+    function delRowWeekly(btn) {
+        btn.closest('tr').remove();
+        calculateWeekly();
+    }
+
+    /* ----------------- Totals & Calculations ----------------- */
     function calculate() {
-        let pI=0,aI=0,lB=0,cB=0,cL=0,tB=0,pB=0,eT=0;
+        let pI=0, aI=0, lB=0, cB=0, cL=0, tB=0, pB=0, eT=0;
+
         document.querySelectorAll('#proj-income-table tbody tr').forEach(r => pI += clean(r.cells[1].querySelector('input').value));
         document.querySelectorAll('#act-income-table tbody tr').forEach(r => aI += clean(r.cells[2].querySelector('input').value));
         document.querySelectorAll('#loan-table tbody tr').forEach(r => lB += clean(r.cells[1].querySelector('input').value));
-        document.querySelectorAll('#cc-table tbody tr').forEach(r => { let b=clean(r.cells[1].querySelector('input').value), l=clean(r.cells[2].querySelector('input').value); cB+=b; cL+=l; r.cells[3].innerText = (l>0?((b/l)*100).toFixed(0):0)+'%'; });
-        document.querySelectorAll('#bills-table tbody tr').forEach(r => { let c=clean(r.cells[1].querySelector('input').value); tB+=c; if(r.cells[3].querySelector('button').classList.contains('paid')) pB+=c; });
-        document.querySelectorAll('.c-amt').forEach(t => eT += clean(t.innerText));
-        document.getElementById('total-proj-inc').innerText = fmt(pI); document.getElementById('total-act-inc').innerText = fmt(aI); document.getElementById('over-under-display').innerText = fmt(aI-pI);
-        document.getElementById('total-loan-bal').innerText = fmt(lB); document.getElementById('total-cc-bal').innerText = fmt(cB); document.getElementById('total-cc-avail').innerText = fmt(cL-cB);
-        document.getElementById('total-bills-cost').innerText = fmt(tB); document.getElementById('total-paid-bills').innerText = fmt(pB); document.getElementById('total-card-spent').innerText = fmt(eT);
-        document.getElementById('sum-inc').innerText = fmt(aI); document.getElementById('sum-out').innerText = fmt(pB+eT); document.getElementById('sum-net').innerText = fmt(aI-(pB+eT));
+
+        document.querySelectorAll('#cc-table tbody tr').forEach(r => {
+            let b = clean(r.cells[1].querySelector('input').value);
+            let l = clean(r.cells[2].querySelector('input').value);
+            cB += b;
+            cL += l;
+            r.cells[3].innerText = (l > 0 ? ((b / l) * 100).toFixed(0) : 0) + '%';
+        });
+
+        document.querySelectorAll('#bills-table tbody tr').forEach(r => {
+            let c = clean(r.cells[1].querySelector('input').value);
+            tB += c;
+            if(r.cells[3].querySelector('button').classList.contains('paid')) pB += c;
+        });
+
+        document.querySelectorAll('#card-table tbody tr').forEach(r => {
+            eT += clean(r.cells[2].innerText);
+        });
+
+        document.getElementById('total-proj-inc').innerText = fmt(pI);
+        document.getElementById('total-act-inc').innerText = fmt(aI);
+        document.getElementById('over-under-display').innerText = fmt(aI - pI);
+
+        document.getElementById('total-loan-bal').innerText = fmt(lB);
+        document.getElementById('total-cc-bal').innerText = fmt(cB);
+        document.getElementById('total-cc-avail').innerText = fmt(cL - cB);
+
+        document.getElementById('total-bills-cost').innerText = fmt(tB);
+        document.getElementById('total-paid-bills').innerText = fmt(pB);
+        document.getElementById('total-card-spent').innerText = fmt(eT);
+
+        document.getElementById('sum-inc').innerText = fmt(aI);
+        document.getElementById('sum-out').innerText = fmt(pB + eT);
+        document.getElementById('sum-net').innerText = fmt(aI - (pB + eT));
+
         updateSelectors();
     }
-    function updateSelectors() {
-        const s = document.getElementById('card-sel'), v = s.value, o = ["Citi","Checking Mitch","Checking Dee"];
-        document.querySelectorAll('.cc-name').forEach(i => o.push(i.value)); s.innerHTML = [...new Set(o)].map(c => `<option value="${c}">${c}</option>`).join(''); if(o.includes(v)) s.value = v;
-        const dl = document.getElementById('category-options'), co = ["Groceries","Gas","Starbucks"];
-        document.querySelectorAll('.bill-name, .debt-name').forEach(i => co.push(i.value)); dl.innerHTML = [...new Set(co)].map(c => `<option value="${c}">`).join('');
+
+    function calculateWeekly() {
+        let startCash = 0, expInc = 0, recInc = 0, billsDue = 0, billsPaid = 0, spentSoFar = 0;
+
+        document.querySelectorAll('#weekly-bank-table tbody tr').forEach(r => {
+            startCash += clean(r.cells[1].querySelector('input').value);
+        });
+
+        document.querySelectorAll('#weekly-income-table tbody tr').forEach(r => {
+            let amt = clean(r.cells[2].querySelector('input').value);
+            expInc += amt;
+            if(r.cells[3].querySelector('button').classList.contains('paid')) recInc += amt;
+        });
+
+        document.querySelectorAll('#weekly-bills-table tbody tr').forEach(r => {
+            let cost = clean(r.cells[2].querySelector('input').value);
+            billsDue += cost;
+            if(r.cells[3].querySelector('button').classList.contains('paid')) billsPaid += cost;
+        });
+
+        document.querySelectorAll('#weekly-spend-table tbody tr').forEach(r => {
+            spentSoFar += clean(r.cells[2].innerText);
+        });
+
+        document.getElementById('weekly-total-start-cash').innerText = fmt(startCash);
+        document.getElementById('weekly-total-exp-inc').innerText = fmt(expInc);
+        document.getElementById('weekly-total-rec-inc').innerText = fmt(recInc);
+        document.getElementById('weekly-total-bills-due').innerText = fmt(billsDue);
+        document.getElementById('weekly-total-bills-paid').innerText = fmt(billsPaid);
+        document.getElementById('weekly-total-spent').innerText = fmt(spentSoFar);
+
+        document.getElementById('w-sum-start').innerText = fmt(startCash);
+        document.getElementById('w-sum-inc').innerText = fmt(expInc);
+        document.getElementById('w-sum-bills').innerText = fmt(billsDue);
+        document.getElementById('w-sum-spent').innerText = fmt(spentSoFar);
+
+        const projectedEnd = startCash + expInc - billsDue - spentSoFar;
+        document.getElementById('w-sum-projected-end').innerText = fmt(projectedEnd);
+        document.getElementById('w-sum-projected-end').style.color = projectedEnd >= 0 ? '#2ecc71' : '#e74c3c';
     }
-    function loadMonth(m) { window.currentMonth = m; document.getElementById('month-selector').value = m; document.querySelectorAll('table tbody').forEach(b => b.innerHTML=''); const d = window.budgetData[m]; d.projIncome?.forEach(x => addRow('proj-income-table', x)); d.actIncome?.forEach(x => addRow('act-income-table', x)); d.loans?.forEach(x => addRow('loan-table', x)); d.cc?.forEach(x => addRow('cc-table', x)); d.bills?.forEach(x => addRow('bills-table', x)); d.extra?.forEach(x => addRow('card-table', x)); calculate(); }
-    function switchMonth() { loadMonth(document.getElementById('month-selector').value); }
-    function startNewMonth() { let n = prompt("New Month Name:"); if(!n || window.budgetData[n]) return; let p = window.budgetData[window.currentMonth]; window.budgetData[n] = { projIncome: JSON.parse(JSON.stringify(p.projIncome||[])), actIncome:[], loans:JSON.parse(JSON.stringify(p.loans||[])), cc:JSON.parse(JSON.stringify(p.cc||[])), bills:(p.bills||[]).map(b=>({...b, status:'unpaid'})), extra:[] }; updateMonthDropdown(); loadMonth(n); }
-    function updateMonthDropdown() { document.getElementById('month-selector').innerHTML = Object.keys(window.budgetData).map(m => `<option value="${m}">${m}</option>`).join(''); }
+
+    function updateSelectors() {
+        const s = document.getElementById('card-sel');
+        const ws = document.getElementById('w-card-sel');
+        const v = s.value;
+        const wv = ws.value;
+        const o = ["Checking Mitch", "Checking Dee", "Citi"];
+
+        document.querySelectorAll('.cc-name').forEach(i => { if(i.value) o.push(i.value); });
+        const unique = [...new Set(o)];
+
+        s.innerHTML = unique.map(c => `<option value="${c}">${c}</option>`).join('');
+        ws.innerHTML = unique.map(c => `<option value="${c}">${c}</option>`).join('');
+
+        if (unique.includes(v)) s.value = v;
+        if (unique.includes(wv)) ws.value = wv;
+
+        const dl = document.getElementById('category-options');
+        const co = ["Groceries", "Gas", "Starbucks", "Dining Out", "Electric", "Water/Trash"];
+        document.querySelectorAll('.bill-name, .debt-name').forEach(i => { if(i.value) co.push(i.value); });
+        dl.innerHTML = [...new Set(co)].map(c => `<option value="${c}">`).join('');
+    }
+
+    /* ----------------- State Serialization ----------------- */
+    function syncCurrentMonthToState() {
+        if(!window.budgetData[window.currentMonth]) {
+            window.budgetData[window.currentMonth] = createMonthFromTemplates(window.currentMonth);
+        }
+        const m = window.budgetData[window.currentMonth];
+        m.projIncome = Array.from(document.querySelectorAll('#proj-income-table tbody tr')).map(tr => ({ source: tr.cells[0].querySelector('input').value, amount: clean(tr.cells[1].querySelector('input').value) }));
+        m.actIncome = Array.from(document.querySelectorAll('#act-income-table tbody tr')).map(tr => ({ date: tr.cells[0].querySelector('input').value, source: tr.cells[1].querySelector('input').value, amount: clean(tr.cells[2].querySelector('input').value), syncId: tr.dataset.syncId }));
+        m.loans = Array.from(document.querySelectorAll('#loan-table tbody tr')).map(tr => ({ lender: tr.cells[0].querySelector('input').value, balance: clean(tr.cells[1].querySelector('input').value), original: clean(tr.cells[2].querySelector('input').value) }));
+        m.cc = Array.from(document.querySelectorAll('#cc-table tbody tr')).map(tr => ({ name: tr.cells[0].querySelector('input').value, balance: clean(tr.cells[1].querySelector('input').value), limit: clean(tr.cells[2].querySelector('input').value) }));
+        m.bills = Array.from(document.querySelectorAll('#bills-table tbody tr')).map(tr => ({ name: tr.cells[0].querySelector('input').value, cost: clean(tr.cells[1].querySelector('input').value), due: tr.cells[2].querySelector('input').value, status: tr.cells[3].querySelector('button').classList.contains('paid') ? 'paid' : 'unpaid', syncId: tr.dataset.syncId }));
+        m.extra = Array.from(document.querySelectorAll('#card-table tbody tr')).map(tr => ({ card: tr.cells[0].innerText, category: tr.cells[1].innerText, amt: clean(tr.cells[2].innerText), syncId: tr.dataset.syncId }));
+    }
+
+    function syncCurrentWeekToState() {
+        if(!window.budgetData[window.currentMonth]) return;
+        const m = window.budgetData[window.currentMonth];
+        if(!m.weeks) m.weeks = {};
+        if(!window.currentWeekKey) return;
+
+        m.weeks[window.currentWeekKey] = {
+            label: document.getElementById('week-selector').selectedOptions[0]?.text || window.currentWeekKey,
+            bankBalances: Array.from(document.querySelectorAll('#weekly-bank-table tbody tr')).map(tr => ({ account: tr.cells[0].querySelector('input').value, balance: clean(tr.cells[1].querySelector('input').value) })),
+            income: Array.from(document.querySelectorAll('#weekly-income-table tbody tr')).map(tr => ({ date: tr.cells[0].querySelector('input').value, source: tr.cells[1].querySelector('input').value, amount: clean(tr.cells[2].querySelector('input').value), received: tr.cells[3].querySelector('button').classList.contains('paid'), syncId: tr.dataset.syncId })),
+            bills: Array.from(document.querySelectorAll('#weekly-bills-table tbody tr')).map(tr => ({ name: tr.cells[0].querySelector('input').value, due: tr.cells[1].querySelector('input').value, cost: clean(tr.cells[2].querySelector('input').value), status: tr.cells[3].querySelector('button').classList.contains('paid') ? 'paid' : 'unpaid', syncId: tr.dataset.syncId })),
+            spending: Array.from(document.querySelectorAll('#weekly-spend-table tbody tr')).map(tr => ({ card: tr.cells[0].innerText, category: tr.cells[1].innerText, amt: clean(tr.cells[2].innerText), syncId: tr.dataset.syncId }))
+        };
+    }
+
+    function loadMonth(m) {
+        window.currentMonth = m;
+        document.getElementById('month-selector').value = m;
+        document.querySelectorAll('#monthly-view table tbody').forEach(b => b.innerHTML = '');
+
+        const d = window.budgetData[m] || createMonthFromTemplates(m);
+        d.projIncome?.forEach(x => addRow('proj-income-table', x));
+        d.actIncome?.forEach(x => addRow('act-income-table', x));
+        d.loans?.forEach(x => addRow('loan-table', x));
+        d.cc?.forEach(x => addRow('cc-table', x));
+        d.bills?.forEach(x => addRow('bills-table', x));
+        d.extra?.forEach(x => addRow('card-table', x));
+
+        calculate();
+        refreshWeekDropdown();
+        loadWeek(window.currentWeekKey);
+    }
+
+    function switchMonth() {
+        syncCurrentWeekToState();
+        syncCurrentMonthToState();
+        loadMonth(document.getElementById('month-selector').value);
+    }
+
+    function loadWeek(wKey) {
+        window.currentWeekKey = wKey;
+        document.getElementById('week-selector').value = wKey;
+        document.querySelectorAll('#weekly-view table tbody').forEach(b => b.innerHTML = '');
+
+        const monthData = window.budgetData[window.currentMonth];
+        if(!monthData.weeks) monthData.weeks = {};
+        if(!monthData.weeks[wKey]) {
+            const weeksList = getSundayWeeksForMonth(window.currentMonth);
+            const found = weeksList.find(w => w.key === wKey);
+            monthData.weeks[wKey] = {
+                label: found ? found.label : wKey,
+                bankBalances: [
+                    { account: "Checking Mitch", balance: 1450.00 },
+                    { account: "Checking Dee", balance: 1820.00 }
+                ],
+                income: [],
+                bills: [],
+                spending: []
+            };
+        }
+
+        const w = monthData.weeks[wKey];
+        document.getElementById('active-week-label').innerText = `Cycle: ${w.label || wKey}`;
+
+        (w.bankBalances || []).forEach(b => addWeeklyBankRow(b));
+        (w.income || []).forEach(i => addWeeklyIncomeRow(i));
+        (w.bills || []).forEach(bl => addWeeklyBillRow(bl));
+        (w.spending || []).forEach(s => {
+            const tbody = document.querySelector('#weekly-spend-table tbody');
+            const r = tbody.insertRow();
+            r.dataset.syncId = s.syncId || genSyncId();
+            r.innerHTML = `<td>${s.card}</td><td>${s.category}</td><td class="w-spent-amt">${fmt(s.amt)}</td><td><button class="btn-del" style="display:inline-block" onclick="delWeeklySpendRow(this, '${r.dataset.syncId}')">X</button></td>`;
+        });
+
+        calculateWeekly();
+    }
+
+    function switchWeek() {
+        syncCurrentWeekToState();
+        loadWeek(document.getElementById('week-selector').value);
+    }
+
+    function updateMonthDropdown() {
+        document.getElementById('month-selector').innerHTML = Object.keys(window.budgetData).map(m => `<option value="${m}">${m}</option>`).join('');
+    }
 </script>
 </body>
 </html>
